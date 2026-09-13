@@ -1,0 +1,8 @@
+{
+  "best_val_loss": 1597.6839552359147,
+  "best_epoch": 50,
+  "final_train_pos_rmse": 14.76876441622421,
+  "final_val_pos_rmse": 23.139665283940055,
+  "final_train_vel_rmse": 79.78212604046783,
+  "final_val_vel_rmse": 42.19565598802133
+}

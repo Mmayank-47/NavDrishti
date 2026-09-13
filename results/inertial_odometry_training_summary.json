@@ -1,0 +1,9 @@
+{
+  "model": "Neural Inertial Odometry (TLIO-style)",
+  "epochs_trained": 100,
+  "best_val_loss": 18.1588,
+  "val_displacement_rmse_m": 60.495,
+  "val_velocity_rmse_mps": 8.559,
+  "trainable_params": 507654,
+  "checkpoint": "checkpoints/inertial_odometry/inertial_odometry_best.pt"
+}

@@ -1,0 +1,200 @@
+# =============================================================================
+# SIH PS 26168 — Intelligent Dead Reckoning (IDR)
+# GitHub Push Exclusions & Protection Rules (.gitignore)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. CREDENTIALS & SENSITIVE SECRETS (STRICT - NEVER COMMIT TO GITHUB)
+# -----------------------------------------------------------------------------
+configs/lightning.env
+configs/*.env
+*.env
+*.env.*
+!configs/lightning.env.template
+*.pem
+*.key
+*.pub
+id_rsa
+id_rsa*
+id_ed25519
+id_ed25519*
+secrets.*
+credentials.*
+token.txt
+*.token
+
+# -----------------------------------------------------------------------------
+# 2. LARGE DATASETS & GEOSPATIAL DATA (> 10 GB TOTAL - BLOCKS GITHUB PUSH)
+# -----------------------------------------------------------------------------
+data/
+data/**
+!data/**/.gitkeep
+!data/**/README.md
+
+# Specific Dataset Folders
+data/IO-VNBD/
+data/OSM/
+data/MOTOR/
+data/NavICGNSS android raw measurments/
+data/GNSS Dataset (with Interference and Spoofing) Part III/
+
+# Nested git repository in downloaded datasets
+data/IO-VNBD/.git/
+
+# Raw geospatial & sensor data files
+*.pbf
+*.osm
+*.nmea
+*.ubx
+*.mat
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.parquet
+*.feather
+*.sqlite
+*.sqlite3
+*.db
+*.csv.gz
+
+# -----------------------------------------------------------------------------
+# 3. ARCHIVES & SYNC TRANSFER BUNDLES (UP TO 200 MB - EXCEEDS GITHUB 100MB LIMIT)
+# -----------------------------------------------------------------------------
+iovnbd_sync.tar.gz
+motor_sync.tar.gz
+sih_sync_bundle.tar.gz
+sih_results_bundle.tar.gz
+*.tar.gz
+*.tar
+*.gz
+*.bz2
+*.xz
+*.7z
+*.zip
+*.rar
+*.iso
+
+# -----------------------------------------------------------------------------
+# 4. TRAINED MODEL WEIGHTS & CHECKPOINTS (LARGE BINARIES)
+# -----------------------------------------------------------------------------
+checkpoints/**/*.pt
+checkpoints/**/*.pth
+checkpoints/**/*.ckpt
+checkpoints/**/*.bin
+checkpoints/**/*.safetensors
+checkpoints/**/*.weights
+checkpoints/limu_bert/*.pt
+checkpoints/inertial_odometry/*.pt
+checkpoints/kalmannet/*.pt
+checkpoints/map_gnn/*.pt
+checkpoints/odonet/*.pt
+!checkpoints/**/.gitkeep
+
+# -----------------------------------------------------------------------------
+# 5. MODEL EXPORTS (COMPILED ONNX & QUANTIZED BINARIES)
+# -----------------------------------------------------------------------------
+exports/**/*.onnx
+exports/**/*.engine
+exports/**/*.tflite
+exports/onnx/*.onnx
+exports/quantized/*.onnx
+!exports/**/.gitkeep
+
+# -----------------------------------------------------------------------------
+# 6. JUPYTER NOTEBOOKS & INTERMEDIATE RUN OUTPUTS
+# -----------------------------------------------------------------------------
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+*-checkpoint.ipynb
+*_executed.ipynb
+notebooks/*_executed.ipynb
+Untitled*.ipynb
+Untitled.ipynb
+
+# -----------------------------------------------------------------------------
+# 7. PYTHON ENVIRONMENTS, BYTECODE & BUILD ARTIFACTS
+# -----------------------------------------------------------------------------
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+conda/
+.conda/
+
+# Test & Coverage caches
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# -----------------------------------------------------------------------------
+# 8. LOGS, TENSORBOARD & MONITORING OUTPUTS
+# -----------------------------------------------------------------------------
+logs/*
+!logs/.gitkeep
+*.log
+events.out.tfevents.*
+wandb/
+mlruns/
+lightning_logs/
+
+# -----------------------------------------------------------------------------
+# 9. OPERATING SYSTEM & METADATA FILES
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# -----------------------------------------------------------------------------
+# 10. IDE & EDITOR CACHES (PRESERVE REPO AUTOMATION SCRIPTS)
+# -----------------------------------------------------------------------------
+.vscode/*
+!.vscode/tasks.json
+!.vscode/sync_and_run.ps1
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+*.bak

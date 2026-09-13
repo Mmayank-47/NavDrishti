@@ -1,0 +1,60 @@
+# configs/paths.yaml
+# All paths are RELATIVE to the project root (e:\Hackethon\ISRO on Windows,
+# or the equivalent remote project root on Lightning AI).
+# Never hardcode absolute paths here.
+
+# ── Dataset roots ──────────────────────────────────────────────────────────────
+data_root: data
+
+datasets:
+  io_vnbd:
+    root: data/IO-VNBD
+    synchronised: data/IO-VNBD/Synchronised V abd S datasets/Categorised IOVNB Dataset
+    unsynchronised: data/IO-VNBD/Unsynchronised V and S Dataset
+    readme: data/IO-VNBD/README.md
+    primary: true           # Primary SIH benchmark dataset
+
+  gnss_interference:
+    root: data/GNSS Dataset (with Interference and Spoofing) Part III/GNSS Dataset (with Interference and Spoofing) Part III
+    primary: false
+
+  navic_gnss:
+    root: data/NavICGNSS android raw measurments/NavICGNSS android raw measurments
+    primary: false
+
+  motor:
+    root: data/MOTOR
+    annotations: data/MOTOR/annotations.csv
+    clips: data/MOTOR/clips
+    primary: false
+
+  osm:
+    root: data/OSM
+    pbf_file: data/OSM/india-260912.osm.pbf
+    primary: false          # Map resource, not a trajectory dataset
+
+# ── Output directories ─────────────────────────────────────────────────────────
+notebooks_dir:   notebooks
+src_dir:         src
+checkpoints_dir: checkpoints
+results_dir:     results
+plots_dir:       plots
+logs_dir:        logs
+artifacts_dir:   artifacts
+scripts_dir:     scripts
+docs_dir:        docs
+
+# ── Checkpoint sub-paths ───────────────────────────────────────────────────────
+checkpoints:
+  limu_bert:          checkpoints/limu_bert
+  odonet:             checkpoints/odonet
+  inertial_odometry:  checkpoints/inertial_odometry
+  kalmannet:          checkpoints/kalmannet
+  map_gnn:            checkpoints/map_gnn
+
+# ── Artifact outputs ───────────────────────────────────────────────────────────
+artifacts:
+  dataset_manifest:   artifacts/dataset_manifest.json
+  final_results_json: results/final_results.json
+  final_results_csv:  results/final_results.csv
+  final_report:       results/final_report.md

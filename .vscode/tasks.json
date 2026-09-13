@@ -1,0 +1,190 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+
+    // ── DEFAULT: GPU Preflight ──────────────────────────────────────────────
+    {
+      "label": "SIH: [DEFAULT] GPU Preflight",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -preflight",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+
+    // ── Phase 0: Audit ─────────────────────────────────────────────────────
+    {
+      "label": "SIH: Dataset Audit",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -audit",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+
+    // ── Phase 1: Preprocessing ─────────────────────────────────────────────
+    {
+      "label": "SIH: Preprocessing",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -preprocess",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+
+    // ── Phase 2: LIMU-BERT ─────────────────────────────────────────────────
+    {
+      "label": "SIH: Train LIMU-BERT",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -trainLimu",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "SIH: Test LIMU-BERT",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -testLimu",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+
+    // ── Phase 3: OdoNet ────────────────────────────────────────────────────
+    {
+      "label": "SIH: Train OdoNet",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -trainOdo",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "SIH: Test OdoNet",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -testOdo",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+
+    // ── Phase 4: Neural Inertial Odometry ─────────────────────────────────
+    {
+      "label": "SIH: Train Neural Inertial Odometry",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -trainInertial",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "SIH: Test Neural Inertial Odometry",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -testInertial",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+
+    // ── Phase 5: KalmanNet ─────────────────────────────────────────────────
+    {
+      "label": "SIH: Train KalmanNet",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -trainKalmannet",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "SIH: Test KalmanNet",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -testKalmannet",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+
+    // ── Phase 7: GNN Map Matcher ───────────────────────────────────────────
+    {
+      "label": "SIH: Train GNN Map Matcher",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -trainMapGnn",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "SIH: Test GNN Map Matcher",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -testMapGnn",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+
+    // ── Phase 8: Integration & Benchmark ──────────────────────────────────
+    {
+      "label": "SIH: Final Pipeline Integration",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -integration",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "SIH: Final SIH Benchmark",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -benchmark",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+
+    // ── Phase 9: Export ────────────────────────────────────────────────────
+    {
+      "label": "SIH: Model Export & Mobile Validation",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -export",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+
+    // ── Utilities ──────────────────────────────────────────────────────────
+    {
+      "label": "SIH: Pull Artifacts Only",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -PullOnly",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "SIH: First-Time Data Sync to Lightning",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -SyncData -preflight",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "SIH: Interactive SSH Terminal",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -Command \"& { $env = Get-Content configs/lightning.env | Where-Object { $_ -match '=' -and $_ -notmatch '^#' } | ForEach-Object { $p = $_ -split '=',2; [PSCustomObject]@{K=$p[0].Trim();V=$p[1].Trim() -replace '\\$HOME',$HOME} }; $u = ($env | Where-Object K -eq 'LIGHTNING_REMOTE_USER').V; $h = ($env | Where-Object K -eq 'LIGHTNING_REMOTE_HOST').V; $k = ($env | Where-Object K -eq 'LIGHTNING_KEY_PATH').V; $d = ($env | Where-Object K -eq 'LIGHTNING_REMOTE_DIR').V; ssh -o UpdateHostKeys=no -i $k -t ${u}@${h} \"cd $d && exec bash -l\" }\"",
+      "presentation": { "reveal": "always", "panel": "new", "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "SIH: Run Current File Directly",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -FileToRun \"${relativeFile}\"",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Local: Run Current Python File",
+      "type": "shell",
+      "command": "py -3 \"${file}\"",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "options": {
+        "env": {
+          "PYTHONPATH": "${workspaceFolder};${workspaceFolder}/src"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Local: List Datasets",
+      "type": "shell",
+      "command": "py -3 -c \"import os; [print(f'  {d}') for d in os.listdir('data') if os.path.isdir(os.path.join('data', d))]\"",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true, "focus": true },
+      "problemMatcher": []
+    }
+  ]
+}

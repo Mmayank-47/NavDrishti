@@ -1,0 +1,71 @@
+{
+  "session": "Y1",
+  "evaluated_windows": {
+    "10s": {
+      "duration_s": 10.0,
+      "distance_m": 149.78,
+      "pure_imu": {
+        "drift_m": 155.09,
+        "drift_pct": 103.55,
+        "rmse_m": 125.47
+      },
+      "eskf_zupt": {
+        "drift_m": 149.74,
+        "drift_pct": 99.98,
+        "rmse_m": 123.25
+      },
+      "eskf_zupt_nhc": {
+        "drift_m": 149.79,
+        "drift_pct": 100.0,
+        "rmse_m": 123.69
+      },
+      "sih_target_pct": 10.0
+    },
+    "30s": {
+      "duration_s": 30.0,
+      "distance_m": 438.86,
+      "pure_imu": {
+        "drift_m": 706.41,
+        "drift_pct": 160.97,
+        "rmse_m": 311.78
+      },
+      "eskf_zupt": {
+        "drift_m": 432.64,
+        "drift_pct": 98.58,
+        "rmse_m": 295.63
+      },
+      "eskf_zupt_nhc": {
+        "drift_m": 432.54,
+        "drift_pct": 98.56,
+        "rmse_m": 296.32
+      },
+      "sih_target_pct": 10.0
+    },
+    "60s": {
+      "duration_s": 60.0,
+      "distance_m": 1027.58,
+      "pure_imu": {
+        "drift_m": 7914.07,
+        "drift_pct": 770.17,
+        "rmse_m": 2932.52
+      },
+      "eskf_zupt": {
+        "drift_m": 878.04,
+        "drift_pct": 85.45,
+        "rmse_m": 529.86
+      },
+      "eskf_zupt_nhc": {
+        "drift_m": 873.93,
+        "drift_pct": 85.05,
+        "rmse_m": 530.62
+      },
+      "sih_target_pct": 10.0
+    }
+  },
+  "summary": {
+    "observation": "Classical strapdown inertial navigation drifts rapidly (>1000%) due to unconstrained quadratic integration of sensor bias.",
+    "zupt_impact": "ZUPT restrains velocity drift during stops, but provides zero observability during continuous highway/arterial driving.",
+    "nhc_impact": "Non-holonomic constraints (v_lat \u2248 0, v_vert \u2248 0) bound lateral velocity drift, reducing 60s outage error substantially, but heading and forward velocity drift still exceed the SIH 10% threshold.",
+    "conclusion": "Proves the indispensable necessity of learned neural motion estimation (LIMU-BERT, OdoNet, TLIO, and KalmanNet) developed in subsequent phases."
+  }
+}

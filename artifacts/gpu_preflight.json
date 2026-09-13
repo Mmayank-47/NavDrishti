@@ -1,0 +1,25 @@
+{
+  "timestamp_utc": "2026-09-13T08:42:15.312060",
+  "hostname": "ip-10-192-28-132",
+  "python_version": "3.12.11 | packaged by Anaconda, Inc. | (main, Jun  5 2025, 13:09:17) [GCC 11.2.0]",
+  "pytorch_version": "2.8.0+cu128",
+  "cuda_available": true,
+  "cuda_version": "12.8",
+  "cudnn_version": "91002",
+  "num_gpus": 1,
+  "gpus": [
+    {
+      "index": 0,
+      "name": "Tesla T4",
+      "vram_gb": 14.56
+    }
+  ],
+  "missing_packages": [
+    "seaborn",
+    "torch_geometric (PyG)",
+    "papermill",
+    "pyproj",
+    "osmnx"
+  ],
+  "preflight_status": "PASSED"
+}

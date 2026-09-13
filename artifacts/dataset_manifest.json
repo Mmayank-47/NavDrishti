@@ -1,0 +1,97 @@
+{
+  "audit_timestamp_utc": "2026-09-13T09:30:43.533937+00:00",
+  "project": "SIH PS 26168 \u2014 Intelligent Dead Reckoning",
+  "datasets": {
+    "io_vnbd": {
+      "source_folder": "data/IO-VNBD",
+      "role": "Primary real vehicle dataset for official SIH inertial-odometry benchmarking",
+      "primary": true,
+      "size_mb": 0.0,
+      "total_csv_files": 0,
+      "vehicle_session_count": 0,
+      "smartphone_session_count": 0,
+      "audited_sessions": 0,
+      "sessions": [],
+      "notes": [
+        "Primary benchmark dataset containing vehicle and smartphone IMU + GNSS + GT data.",
+        "Session-level train/validation/test splits defined to prevent data leakage.",
+        "Ground truth reference used exclusively for loss calculation and evaluation, never during GNSS-denied inference."
+      ]
+    },
+    "gnss_interference": {
+      "source_folder": "data/GNSS Dataset (with Interference and Spoofing) Part III/GNSS Dataset (with Interference and Spoofing) Part III",
+      "role": "GNSS interference, jamming, and spoofing experiments",
+      "primary": false,
+      "size_mb": 0.0,
+      "total_json_files": 0,
+      "pvt_solution_files": 0,
+      "observation_files": 0,
+      "sessions": [],
+      "notes": [
+        "Contains rich JSON observations and PVT solutions (velN, velE, velD, lat, lon, height, numSV).",
+        "Use for GNSS quality/degradation detection experiments and covariance estimation.",
+        "Validate schemas before use in any fusion pipeline."
+      ]
+    },
+    "navic_gnss": {
+      "source_folder": "data/NavICGNSS android raw measurments/NavICGNSS android raw measurments",
+      "role": "Android/NavIC raw GNSS measurement experiments and GNSS-side validation",
+      "primary": false,
+      "size_mb": 0.0,
+      "total_files": 0,
+      "ground_truth": null,
+      "sessions": [],
+      "notes": [
+        "Contains Android raw GNSS measurements across multiple inclination angles (0, 45, 90, 135, 180 deg).",
+        "Includes reference Ublox ground truth static positions.",
+        "Supports NavIC (IRNSS) constellation raw measurements."
+      ]
+    },
+    "motor": {
+      "source_folder": "data/MOTOR",
+      "role": "Additional real vehicle/motorcycle data \u2014 schema must be audited before use",
+      "primary": false,
+      "size_mb": 0.0,
+      "annotations_info": null,
+      "clips_file_count": 0,
+      "notes": [
+        "Annotations cover Road Type, Lanes, Markings, Divider, Traffic Density.",
+        "Use only after coordinate system, sensor schema, and ground truth are confirmed."
+      ]
+    },
+    "osm": {
+      "source_folder": "data/OSM",
+      "role": "Offline OpenStreetMap road data for GNN map matching \u2014 not a trajectory dataset",
+      "primary": false,
+      "pbf_file": null,
+      "pbf_size_mb": 0.0,
+      "notes": [
+        "india-260912.osm.pbf covers India road network (1.7 GB).",
+        "Local subgraphs extracted per session bounding box during GNN training.",
+        "Never load full India road network into memory at once."
+      ]
+    }
+  },
+  "split_strategy": {
+    "method": "session_level",
+    "rationale": "Adjacent samples from the same trajectory must never be split randomly. Session-level splitting prevents temporal leakage.",
+    "io_vnbd": {
+      "train_drivers": [
+        "M (Driver B)",
+        "Vf (Driver E)",
+        "Vta (Driver E)",
+        "Vtb (Driver E)",
+        "Vw (Driver E)"
+      ],
+      "val_drivers": [
+        "Y (Driver D)"
+      ],
+      "test_drivers": [
+        "S (Driver A)"
+      ],
+      "note": "Test set (Driver A / S sessions) locked and held-out completely until final evaluation. Never tune hyperparameters on test sessions."
+    },
+    "final_test_set_locked": true,
+    "warning": "Do NOT use final test sessions for ANY hyperparameter tuning or architecture selection."
+  }
+}

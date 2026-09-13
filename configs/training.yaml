@@ -1,0 +1,102 @@
+# configs/training.yaml
+# Training hyperparameters — all values are configurable here, never hardcoded in Python.
+# Adjust per model after audit results are known.
+
+# ── Global defaults (overridden per model) ─────────────────────────────────────
+global:
+  seed: 42
+  batch_size: 64
+  num_epochs: 100
+  early_stopping_patience: 15
+  grad_clip_norm: 1.0
+  checkpoint_save_top_k: 3    # keep top-k by validation loss
+  log_every_n_steps: 50
+
+# ── LIMU-BERT ──────────────────────────────────────────────────────────────────
+limu_bert:
+  # Self-supervised pretraining (masked IMU modelling)
+  batch_size: 128
+  num_epochs: 80
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-4
+  warmup_steps: 500
+  scheduler: cosine
+  mask_ratio: 0.15            # fraction of tokens to mask
+  window_size: 200            # samples per window (at IMU rate)
+  stride: 100                 # sliding window stride
+  hidden_dim: 128
+  num_heads: 4
+  num_layers: 4
+  dropout: 0.1
+  optimizer: AdamW
+  checkpoint_dir: checkpoints/limu_bert
+
+# ── OdoNet ─────────────────────────────────────────────────────────────────────
+odonet:
+  batch_size: 64
+  num_epochs: 60
+  learning_rate: 5.0e-4
+  weight_decay: 1.0e-4
+  scheduler: cosine
+  window_size: 200
+  stride: 50
+  hidden_dim: 64
+  num_layers: 3
+  dropout: 0.1
+  optimizer: AdamW
+  # Output: forward velocity + uncertainty
+  uncertainty_loss_weight: 0.1
+  checkpoint_dir: checkpoints/odonet
+
+# ── Neural Inertial Odometry (TLIO-style) ──────────────────────────────────────
+inertial_odometry:
+  batch_size: 64
+  num_epochs: 100
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-4
+  scheduler: cosine
+  window_size: 200            # ~2s at 100 Hz
+  stride: 50
+  # TCN encoder defaults
+  tcn_channels: [64, 128, 256]
+  tcn_kernel_size: 3
+  dropout: 0.1
+  optimizer: AdamW
+  # Loss weights for multi-head outputs
+  displacement_loss_weight: 1.0
+  velocity_loss_weight: 0.5
+  uncertainty_loss_weight: 0.1
+  checkpoint_dir: checkpoints/inertial_odometry
+
+# ── KalmanNet ──────────────────────────────────────────────────────────────────
+kalmannet:
+  batch_size: 32
+  num_epochs: 50
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-4
+  scheduler: step
+  scheduler_step_size: 20
+  scheduler_gamma: 0.5
+  hidden_dim: 64
+  num_layers: 2
+  optimizer: Adam
+  checkpoint_dir: checkpoints/kalmannet
+
+# ── GNN Map Matcher ────────────────────────────────────────────────────────────
+map_gnn:
+  batch_size: 32
+  num_epochs: 80
+  learning_rate: 5.0e-4
+  weight_decay: 1.0e-4
+  scheduler: cosine
+  # GraphSAGE / GATv2 config
+  node_hidden_dim: 64
+  edge_hidden_dim: 32
+  num_gnn_layers: 3
+  num_heads: 4              # for GATv2
+  dropout: 0.1
+  optimizer: AdamW
+  # Local graph search radius (metres)
+  local_graph_radius_m: 200
+  max_candidate_roads: 20
+  checkpoint_dir: checkpoints/map_gnn

@@ -1,0 +1,16 @@
+{
+  "session": "S1",
+  "driver": "Driver A",
+  "duration_s": 300.0,
+  "distance_m": 3476.1859322717537,
+  "top1_accuracy_pct": 56.694813027744274,
+  "top3_accuracy_pct": 78.40772014475272,
+  "mode_a_pure_dr_rmse_m": 24.890094429590654,
+  "mode_b_classical_rmse_m": 33.0653157343478,
+  "mode_c_gnn_rmse_m": 33.56491452559614,
+  "mode_d_gnn_viterbi_rmse_m": 33.60209715343429,
+  "mode_e_complete_system_rmse_m": 29.90058108779302,
+  "mode_e_p95_error_m": 45.255300397086685,
+  "mode_e_max_error_m": 75.80826963380254,
+  "drift_reduction_pct": -20.130444552454723
+}

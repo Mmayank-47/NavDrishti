@@ -1,0 +1,53 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File (Local)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/training:${workspaceFolder}/INS-GNSS-switching-backend"
+      }
+    },
+    {
+      "name": "Python: Current File with Arguments (Local)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "args": ["${command:pickArgs}"],
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Python: Debug Pytest (Current File)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-v", "-s", "${file}"],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/training:${workspaceFolder}/INS-GNSS-switching-backend"
+      }
+    },
+    {
+      "name": "Python: FastAPI Backend (Uvicorn)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["backend.api.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "cwd": "${workspaceFolder}/INS-GNSS-switching-backend",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/INS-GNSS-switching-backend"
+      }
+    }
+  ]
+}

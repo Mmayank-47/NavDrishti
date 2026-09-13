@@ -1,0 +1,56 @@
+# configs/runtime.yaml
+# Runtime/execution configuration.
+# No hardcoded GPU IDs, CUDA versions, or machine-specific values.
+
+# ── Compute ────────────────────────────────────────────────────────────────────
+compute:
+  # "auto"  → detect at runtime (preferred)
+  # "cuda"  → force GPU, fail if unavailable
+  # "cpu"   → CPU only (never for official benchmark)
+  device: auto
+
+  # Number of dataloader workers. "auto" → use cpu_count // 2
+  num_workers: auto
+
+  # Pin memory for faster GPU data transfer
+  pin_memory: true
+
+  # Use torch.cuda.amp mixed-precision where safe
+  mixed_precision: true
+
+  # Fail loudly if GPU not available (required for official benchmark)
+  require_gpu_for_benchmark: true
+
+# ── Reproducibility ────────────────────────────────────────────────────────────
+seed: 42
+deterministic: true         # torch.use_deterministic_algorithms(True)
+
+# ── Navigation rates ───────────────────────────────────────────────────────────
+rates:
+  smartphone_imu_hz: 100    # typical Android IMU; actual value confirmed from data
+  fog_imu_hz: 200           # FOG IMU edge target
+  navigation_output_hz: 10  # SIH required output rate
+
+# ── GNSS modes ─────────────────────────────────────────────────────────────────
+gnss:
+  # Quality threshold below which we begin anticipatory DR blending
+  quality_blend_threshold: 0.6
+  # Minimum satellites for reliable GNSS fix
+  min_satellites: 4
+  # Innovation gating chi-squared threshold (95th percentile, 2-DOF)
+  innovation_gate_chi2: 5.991
+
+# ── ONNX ───────────────────────────────────────────────────────────────────────
+onnx:
+  # Preferred execution provider — must be verified at runtime
+  preferred_provider: CUDAExecutionProvider
+  fallback_provider: CPUExecutionProvider
+  # Fail if GPU provider unavailable during official inference benchmark
+  require_cuda_for_benchmark: true
+
+# ── Logging ────────────────────────────────────────────────────────────────────
+logging:
+  level: INFO
+  log_gpu_memory: true
+  log_to_file: true
+  log_dir: logs

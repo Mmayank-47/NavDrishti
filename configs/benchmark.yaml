@@ -1,0 +1,85 @@
+# configs/benchmark.yaml
+# SIH PS 26168 benchmark thresholds — transparent configuration values.
+# NEVER hardcode these inside benchmark Python code.
+# NEVER hardcode PASS or FAIL — always compute from actual results.
+
+# ── SIH PS 26168 Requirements ──────────────────────────────────────────────────
+sih_requirements:
+  # Positional drift < 10% of total distance during GNSS blackout
+  max_drift_percent: 10.0
+
+  # Examples from the spec:
+  example_50m:
+    distance_m: 50.0
+    max_error_m: 5.0          # <10% of 50 m
+  example_1km:
+    distance_m: 1000.0
+    max_error_m: 100.0        # <10% of 1000 m
+    approx_speed_kmh: 60.0
+
+  # Navigation output rate
+  nav_output_hz: 10.0
+
+  # Higher-rate edge deployment
+  fog_output_hz: 200.0
+
+# ── Evaluation windows ─────────────────────────────────────────────────────────
+# Do NOT hardcode a specific time range (e.g., 85-130s) as the benchmark window.
+# These are duration targets; qualifying windows are discovered from real data.
+outage_durations_seconds:
+  - 3.0
+  - 5.0
+  - 10.0
+  - 20.0
+  - 30.0
+  - 45.0
+  - 60.0
+
+outage_distances_meters:
+  - 50.0
+  - 1000.0
+
+# Minimum qualifying window criteria (from real trajectory)
+min_qualifying_gnss_quality: 0.8   # GNSS quality before blackout
+min_distance_per_window_m: 10.0    # minimum travelled distance in window
+
+# ── Metrics to report ──────────────────────────────────────────────────────────
+metrics:
+  - travelled_distance_m
+  - outage_duration_s
+  - final_position_error_m
+  - max_position_error_m
+  - rmse_m
+  - p95_error_m
+  - drift_percent
+  - velocity_rmse_mps
+  - heading_rmse_deg
+  - recovery_jump_m
+  - recovery_time_s
+  - trajectory_rmse_m
+
+# ── Ablation variants to report ────────────────────────────────────────────────
+ablation_variants:
+  - name: "Pure DR (ESKF only)"
+    id: baseline_eskf
+  - name: "OdoNet + ESKF"
+    id: exp1_odo_eskf
+  - name: "LIMU-BERT + OdoNet + ESKF"
+    id: exp2_limu_odo_eskf
+  - name: "Neural Inertial Odometry + ESKF"
+    id: exp3_nio_eskf
+  - name: "Neural Inertial Odometry + OdoNet + ESKF + KalmanNet"
+    id: exp4_nio_odo_kn
+  - name: "exp4 + Vehicle Constraints"
+    id: exp5_constraints
+  - name: "exp5 + Robust GNSS Fusion"
+    id: exp6_gnss_fusion
+  - name: "exp6 + GNN Map Matching"
+    id: exp7_gnn
+  - name: "Complete Proposed System"
+    id: final_system
+
+# ── Recovery test ──────────────────────────────────────────────────────────────
+recovery:
+  max_acceptable_jump_m: 5.0       # position snap on GNSS re-acquisition
+  max_acceptable_recovery_time_s: 2.0

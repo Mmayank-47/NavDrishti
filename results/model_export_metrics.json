@@ -1,0 +1,226 @@
+{
+  "timestamp": "2026-09-13 13:40:43 UTC",
+  "onnx_runtime_version": "1.30.0",
+  "cuda_available": true,
+  "cuda_provider_available": false,
+  "models": {
+    "limu_bert": {
+      "param_count": 548102,
+      "numeric_equivalence": {
+        "passed": true,
+        "max_abs_diff": 2.86102294921875e-06,
+        "max_rel_diff": 0.005557520780712366
+      },
+      "footprint": {
+        "original_onnx": "/home/zeus/content/sih-model-training/exports/onnx/limu_bert.onnx",
+        "quantized_onnx": "/home/zeus/content/sih-model-training/exports/quantized/limu_bert.quant.onnx",
+        "original_mb": 2.71706485748291,
+        "quantized_mb": 1.2437162399291992,
+        "size_reduction_pct": 54.22574339718271,
+        "compression_ratio": 2.1846340590017412
+      },
+      "latency": {
+        "pytorch_cpu": {
+          "mean_ms": 3.3480053400126053,
+          "std_ms": 0.8601077848040497,
+          "p50_ms": 2.735566500632558,
+          "p95_ms": 4.380542000671994,
+          "p99_ms": 4.668261200495195,
+          "min_ms": 2.581644001111272,
+          "max_ms": 7.469881998986239,
+          "throughput_fps": 298.6853061579152,
+          "n_runs": 100
+        },
+        "onnx_cpu_fp32": {
+          "mean_ms": 2.9484597999726248,
+          "std_ms": 0.3226633381627484,
+          "p50_ms": 2.765533999991021,
+          "p95_ms": 3.491314700568182,
+          "p99_ms": 3.633019959816014,
+          "min_ms": 2.669975998287555,
+          "max_ms": 4.282158999558305,
+          "throughput_fps": 339.1601269277216,
+          "n_runs": 100
+        },
+        "onnx_cpu_int8": {
+          "mean_ms": 2.6450506399851292,
+          "std_ms": 0.37213815204879563,
+          "p50_ms": 2.469132000442187,
+          "p95_ms": 3.445575200839812,
+          "p99_ms": 3.521667040349712,
+          "min_ms": 2.4283410002681194,
+          "max_ms": 3.5646369997266447,
+          "throughput_fps": 378.06459539301,
+          "n_runs": 100
+        }
+      }
+    },
+    "inertial_odometry": {
+      "param_count": 507654,
+      "numeric_equivalence": {
+        "passed": true,
+        "max_abs_diff": 1.430511474609375e-06,
+        "max_rel_diff": 1.0404049817225314e-06
+      },
+      "footprint": {
+        "original_onnx": "/home/zeus/content/sih-model-training/exports/onnx/inertial_odometry.onnx",
+        "quantized_onnx": "/home/zeus/content/sih-model-training/exports/quantized/inertial_odometry.quant.onnx",
+        "original_mb": 1.9615364074707031,
+        "quantized_mb": 0.5441608428955078,
+        "size_reduction_pct": 72.25843778259645,
+        "compression_ratio": 3.604699663859066
+      },
+      "latency": {
+        "pytorch_cpu": {
+          "mean_ms": 5.572712520061032,
+          "std_ms": 1.2241917434815597,
+          "p50_ms": 6.377822499416652,
+          "p95_ms": 6.620524299614772,
+          "p99_ms": 6.651167520376475,
+          "min_ms": 3.7286890001269057,
+          "max_ms": 6.699630001094192,
+          "throughput_fps": 179.44582578055687,
+          "n_runs": 100
+        },
+        "onnx_cpu_fp32": {
+          "mean_ms": 1.2017764700431144,
+          "std_ms": 0.05732668088219583,
+          "p50_ms": 1.1865345004480332,
+          "p95_ms": 1.3528207007766468,
+          "p99_ms": 1.4018000909709374,
+          "min_ms": 1.0766509985842276,
+          "max_ms": 1.4263610009948025,
+          "throughput_fps": 832.1014971811892,
+          "n_runs": 100
+        },
+        "onnx_cpu_int8": {
+          "mean_ms": 3.355736930079729,
+          "std_ms": 0.6134481076472464,
+          "p50_ms": 3.1650549990445143,
+          "p95_ms": 5.509764251200977,
+          "p99_ms": 5.573206859644415,
+          "min_ms": 3.124546001345152,
+          "max_ms": 5.599527001322713,
+          "throughput_fps": 297.9971376886927,
+          "n_runs": 100
+        }
+      }
+    },
+    "kalmannet": {
+      "param_count": 55176,
+      "numeric_equivalence": {
+        "passed": true,
+        "max_abs_diff": 4.76837158203125e-07,
+        "max_rel_diff": 2.4189939722418785e-05
+      },
+      "footprint": {
+        "original_onnx": "/home/zeus/content/sih-model-training/exports/onnx/kalmannet.onnx",
+        "quantized_onnx": "/home/zeus/content/sih-model-training/exports/quantized/kalmannet.quant.onnx",
+        "original_mb": 0.21737289428710938,
+        "quantized_mb": 0.208648681640625,
+        "size_reduction_pct": 4.0134777038766,
+        "compression_ratio": 1.0418129296475063
+      },
+      "latency": {
+        "pytorch_cpu": {
+          "mean_ms": 0.6127968900000269,
+          "std_ms": 0.034757107977723516,
+          "p50_ms": 0.6170649994601263,
+          "p95_ms": 0.6598336993192788,
+          "p99_ms": 0.6681659706191568,
+          "min_ms": 0.48883499948715325,
+          "max_ms": 0.6935069995961385,
+          "throughput_fps": 1631.8620677072236,
+          "n_runs": 100
+        },
+        "onnx_cpu_fp32": {
+          "mean_ms": 0.1083605600069859,
+          "std_ms": 0.009271317111214922,
+          "p50_ms": 0.10573899908195017,
+          "p95_ms": 0.1314280011683877,
+          "p99_ms": 0.135836099361768,
+          "min_ms": 0.09658899944042787,
+          "max_ms": 0.1381229994876776,
+          "throughput_fps": 9228.449907748085,
+          "n_runs": 100
+        },
+        "onnx_cpu_int8": {
+          "mean_ms": 0.12242551001691027,
+          "std_ms": 0.01191433417078277,
+          "p50_ms": 0.1198859999931301,
+          "p95_ms": 0.1502296501712408,
+          "p99_ms": 0.16380448076233733,
+          "min_ms": 0.10366599963163026,
+          "max_ms": 0.16395100101362914,
+          "throughput_fps": 8168.232257001609,
+          "n_runs": 100
+        }
+      }
+    },
+    "map_gnn": {
+      "param_count": 25985,
+      "numeric_equivalence": {
+        "passed": true,
+        "max_abs_diff": 1.9073486328125e-06,
+        "max_rel_diff": 1.919158194141346e-06
+      },
+      "footprint": {
+        "original_onnx": "/home/zeus/content/sih-model-training/exports/onnx/map_gnn.onnx",
+        "quantized_onnx": "/home/zeus/content/sih-model-training/exports/quantized/map_gnn.quant.onnx",
+        "original_mb": 0.12401294708251953,
+        "quantized_mb": 0.07120132446289062,
+        "size_reduction_pct": 42.585571798795726,
+        "compression_ratio": 1.7417224752210019
+      },
+      "latency": {
+        "pytorch_cpu": {
+          "mean_ms": 1.203577670003142,
+          "std_ms": 0.38200629689567955,
+          "p50_ms": 1.1511360007716576,
+          "p95_ms": 1.2700661500275598,
+          "p99_ms": 3.279219448704685,
+          "min_ms": 0.7232560001284583,
+          "max_ms": 4.203824999422068,
+          "throughput_fps": 830.8562255042415,
+          "n_runs": 100
+        },
+        "onnx_cpu_fp32": {
+          "mean_ms": 0.23715346989774844,
+          "std_ms": 0.01641742061176372,
+          "p50_ms": 0.23583349957334576,
+          "p95_ms": 0.2665891989636293,
+          "p99_ms": 0.2752168292499846,
+          "min_ms": 0.21031300093454774,
+          "max_ms": 0.2778730013233144,
+          "throughput_fps": 4216.678762622204,
+          "n_runs": 100
+        },
+        "onnx_cpu_int8": {
+          "mean_ms": 0.24807369996779016,
+          "std_ms": 0.0629978682994117,
+          "p50_ms": 0.23616899943590397,
+          "p95_ms": 0.28167419895908097,
+          "p99_ms": 0.3456298104902115,
+          "min_ms": 0.209142999665346,
+          "max_ms": 0.8474420010315953,
+          "throughput_fps": 4031.0601249944666,
+          "n_runs": 100
+        }
+      }
+    }
+  },
+  "total_footprint": {
+    "pytorch_total_mb": 13.429635047912598,
+    "onnx_fp32_total_mb": 5.019987106323242,
+    "onnx_int8_total_mb": 2.0677270889282227,
+    "overall_savings_pct": 58.81011155738456,
+    "overall_compression_ratio": 2.427780306793428
+  },
+  "mobile_realtime_budget": {
+    "target_frequency_hz": 10,
+    "budget_per_step_ms": 100.0,
+    "estimated_step_latency_cpu_ms": 3.6711099984735482,
+    "available_cpu_headroom_pct": 96.32889000152645,
+    "is_realtime_compliant": true
+  }
+}

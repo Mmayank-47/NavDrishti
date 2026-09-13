@@ -1,0 +1,49 @@
+{
+  "session": "S1",
+  "driver": "Driver A",
+  "sih_specification": "Drift < 10% of traveled distance over GNSS outage",
+  "benchmarks": [
+    {
+      "window": "10s Outage",
+      "duration_s": 10.0,
+      "distance_m": 8.844090577978907,
+      "drift_pure_imu_m": 112.85087126258513,
+      "drift_naive_m": 8.844090577978907,
+      "drift_proposed_m": 10.479637917446786,
+      "drift_pct_proposed": 118.493109325907,
+      "rmse_proposed_m": 8.844600254246819,
+      "p95_proposed_m": 10.325237702660127,
+      "recovery_jump_proposed_m": 0.9192554187129176,
+      "recovery_jump_naive_m": 8.844090577978907,
+      "sih_target_less_than_10pct": false
+    },
+    {
+      "window": "30s Outage",
+      "duration_s": 30.0,
+      "distance_m": 300.3915110884238,
+      "drift_pure_imu_m": 1171.722139694486,
+      "drift_naive_m": 288.24943550267716,
+      "drift_proposed_m": 124.52432348733475,
+      "drift_pct_proposed": 41.454008815408756,
+      "rmse_proposed_m": 86.27562958419156,
+      "p95_proposed_m": 128.0277251801368,
+      "recovery_jump_proposed_m": 5.611818615779931,
+      "recovery_jump_naive_m": 288.24943550267716,
+      "sih_target_less_than_10pct": false
+    },
+    {
+      "window": "60s Outage",
+      "duration_s": 60.0,
+      "distance_m": 606.2905941065784,
+      "drift_pure_imu_m": 1478.6195824502197,
+      "drift_naive_m": 660.2973800562237,
+      "drift_proposed_m": 522.1571780041667,
+      "drift_pct_proposed": 86.12325229514907,
+      "rmse_proposed_m": 320.4320992150845,
+      "p95_proposed_m": 506.1195262029987,
+      "recovery_jump_proposed_m": 20.494273886930536,
+      "recovery_jump_naive_m": 660.2973800562237,
+      "sih_target_less_than_10pct": false
+    }
+  ]
+}
