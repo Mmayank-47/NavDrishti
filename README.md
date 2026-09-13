@@ -6,24 +6,11 @@
 [![ONNX Runtime](https://img.shields.io/badge/ONNX%20Runtime-v1.30-blue.svg)](https://onnxruntime.ai/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-An end-to-end, production-grade navigation engine designed for **Smart India Hackathon (SIH) Problem Statement 26168**. The system achieves high-accuracy vehicle positioning in GNSS-denied environments (urban canyons, tunnels, underpasses) using low-cost smartphone MEMS IMU sensors, neural inertial odometry, adaptive Kalman filtering, and topological map matching.
+An end-to-end, production-grade navigation engine designed for **Smart India Hackathon (SIH) Problem Statement 26168**. The system achieves high-accuracy vehicle positioning in GNSS-denied environments (urban canyons, tunnels, underpasses) using low-cost smartphone MEMS IMU sensors, neural inertial odometry, adaptive Kalman filtering, and topological road map matching.
 
 ---
 
-## Key Performance Highlights (Held-Out Test on Driver A — Session `S1`)
-
-| Blackout Window Duration | Outage Distance | System Drift (%) | Target Threshold | Status |
-| :--- | :---: | :---: | :---: | :---: |
-| **Short Outage (10s)** | 114.7 m | **6.23%** | < 10.0% | **PASSED ✓** |
-| **Medium Outage (30s)** | 401.4 m | **8.12%** | < 10.0% | **PASSED ✓** |
-| **Long Outage (60s)** | 770.8 m | **11.41%** | Baseline | **PASSED ✓** *(vs 770.2% for pure DR)* |
-| **Post-Blackout Recovery Jump** | — | **5.6 m – 20.4 m** | < 25.0 m | **98.1% Smoother** *(vs 660 m naive snap)* |
-| **Single-Step Mobile Latency** | — | **3.67 ms / step** | < 100.0 ms (10 Hz) | **96.3% CPU Headroom** |
-| **Complete Model Suite Disk Size** | — | **2.07 MB (INT8)** | < 25.0 MB | **58.8% Compression** |
-
----
-
-## System Architecture
+## System Architecture Flowchart
 
 ```text
 Smartphone Raw MEMS IMU (100 Hz)
@@ -60,18 +47,30 @@ Final 10 Hz Production Navigation State Output
 
 ---
 
+## Key Performance Highlights (Held-Out Test on Driver A — Session `S1`)
+
+| Blackout Window Duration | Outage Distance | System Drift (%) | Target Threshold | Status |
+| :--- | :---: | :---: | :---: | :---: |
+| **Short Outage (10s)** | 114.7 m | **6.23%** | < 10.0% | **PASSED ✓** |
+| **Medium Outage (30s)** | 401.4 m | **8.12%** | < 10.0% | **PASSED ✓** |
+| **Long Outage (60s)** | 770.8 m | **11.41%** | Baseline | **PASSED ✓** *(vs 770.2% for pure DR)* |
+| **Post-Blackout Recovery Jump** | — | **5.6 m – 20.4 m** | < 25.0 m | **98.1% Smoother** *(vs 660 m naive snap)* |
+| **Single-Step Mobile Latency** | — | **3.67 ms / step** | < 100.0 ms (10 Hz) | **96.3% CPU Headroom** |
+| **Complete Model Suite Disk Size** | — | **2.07 MB (INT8)** | < 25.0 MB | **58.8% Compression** |
+
+---
+
 ## Repository Structure
 
 ```
 ├── .vscode/
-│   ├── sync_and_run.ps1       # Automated local-to-remote Lightning AI sync and execution controller
+│   ├── sync_and_run.ps1       # Automated pipeline stage runner and execution controller
 │   ├── tasks.json             # VS Code build & stage execution tasks (Ctrl+Shift+B)
 │   └── launch.json            # Debugging configurations
 ├── configs/
 │   ├── paths.yaml             # Logical dataset and output paths
 │   ├── training.yaml          # Hyperparameters for all neural models
-│   ├── benchmark.yaml         # Official SIH benchmark parameters
-│   └── lightning.env.template # Template for remote GPU cloud credentials
+│   └── benchmark.yaml         # Official SIH benchmark parameters
 ├── docs/                      # Comprehensive technical reports for all 9 project phases
 ├── notebooks/                 # Traceable Jupyter notebooks for training, testing & benchmarking
 │   ├── 00_environment_gpu.ipynb
@@ -106,11 +105,11 @@ Final 10 Hz Production Navigation State Output
 ## Quickstart & Verification
 
 ### 1. Installation
-Clone the repository and install requirements:
+Clone the repository and install dependencies:
 ```bash
 git clone git@github.com:tusharpatidar2006/IDR-system.git
 cd IDR-system
-pip install -r requirements.txt  # Or install numpy, scipy, torch, onnx, onnxruntime
+pip install numpy scipy torch onnx onnxruntime matplotlib pyyaml
 ```
 
 ### 2. Run Verification Suite
@@ -118,18 +117,19 @@ Run the automated unit and integration tests across all system modules:
 ```bash
 python scripts/verify_phase8.py   # Verifies end-to-end navigation pipeline
 python scripts/verify_phase9.py   # Verifies ONNX export & quantization tools
-python scripts/verify_gitignore.py # Verifies GitHub push exclusions
+python scripts/verify_gitignore.py # Verifies GitHub repository integrity
 ```
 
-### 3. Remote Cloud GPU Execution (Lightning AI)
-Automated synchronization and execution on remote GPU instances is managed via PowerShell:
-```powershell
-# Run the official multi-window benchmark on remote Tesla T4 GPU
-powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -benchmark
+### 3. Pipeline Execution & Benchmarking
+Run the official multi-window benchmark and model export suites:
+```bash
+# Execute the official multi-window benchmark
+python -m unittest scripts/verify_phase8.py
 
 # Export and profile models for mobile deployment
-powershell -ExecutionPolicy Bypass -File .vscode/sync_and_run.ps1 -export
+python -m unittest scripts/verify_phase9.py
 ```
+Or execute any pipeline stage via VS Code build tasks: `Ctrl + Shift + B`.
 
 ---
 

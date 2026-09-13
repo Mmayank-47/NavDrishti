@@ -1,13 +1,10 @@
 <#
 .SYNOPSIS
-    SIH PS 26168 — Lightning AI remote sync-and-run pipeline controller.
+    SIH PS 26168 — Pipeline Stage Runner and Execution Controller.
 
 .DESCRIPTION
-    Reads credentials from configs/lightning.env (gitignored).
-    Syncs source code to Lightning AI, executes the requested notebook/script
-    remotely, streams live output, and pulls generated artifacts back.
-
-    Ctrl+Shift+B triggers the default task in tasks.json which calls this script.
+    Automated execution runner for Intelligent Dead Reckoning (IDR) pipeline stages.
+    Executes training, evaluation, fusion, and benchmarking stages across environments.
 
 .PARAMETER Stage
     Pipeline stage to run (see Section 49 of procedure_roadmap.md):

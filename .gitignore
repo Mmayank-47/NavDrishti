@@ -6,11 +6,11 @@
 # -----------------------------------------------------------------------------
 # 1. CREDENTIALS & SENSITIVE SECRETS (STRICT - NEVER COMMIT TO GITHUB)
 # -----------------------------------------------------------------------------
-configs/lightning.env
+configs/lightning*
 configs/*.env
 *.env
 *.env.*
-!configs/lightning.env.template
+*.template
 *.pem
 *.key
 *.pub
