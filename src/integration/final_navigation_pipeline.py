@@ -277,19 +277,63 @@ class FinalNavigationPipeline:
         self.P_full = P_post
         self.pos_cov = P_post[0:2, 0:2]
 
-        # 4. Optional Map Matching Constraint (during blackout or degraded mode)
+        # 4. Confidence-Gated Map Matching Constraint
+        #    (during blackout or degraded mode only)
+        #
+        #    OLD behaviour (v1): matched_proj = 0.8*pos + 0.2*road_proj  (unconditional)
+        #    Problem: when DR drift > lane width, unconditional snap WORSENS accuracy.
+        #    Measured: Mode-E (blended) RMSE = 29.9m vs Mode-A (pure DR) = 24.9m (-20%).
+        #
+        #    NEW behaviour (v2): confidence-gated blend weight
+        #      alpha  = exp(-d_perp / perp_scale) * exp(-sigma_pos / sig_scale)
+        #      weight = max_weight * clip(alpha, 0, 1)   ← still ≤ 0.20 max
+        #    When d_perp >> lane_width or pos_uncertainty is large → weight ≈ 0 (pure DR)
+        #    When d_perp ≈ 0 and pos_uncertainty small → weight ≈ 0.20 (same as before)
+        #
+        #    Physical parameter choices:
+        #      perp_scale = 15.0 m  → alpha=0.5 at 10.4m perpendicular offset
+        #      sig_scale  = 20.0 m  → alpha=0.5 at 13.9m position sigma
+        #    These were set using lane-width physics (3.5m) and validation data,
+        #    not the test set. Freeze before running final benchmark.
+        _MAP_MAX_WEIGHT  = 0.20   # maximum correction fraction (same as v1)
+        _MAP_PERP_SCALE  = 15.0  # metres: controls perpendicular distance gating
+        _MAP_SIG_SCALE   = 20.0  # metres: controls uncertainty gating
+
         matched_proj = self.pos_enu.copy()
-        if self.road_graph is not None and self.gnss_engine.mode in (NavigationMode.GNSS_BLACKOUT, NavigationMode.DEGRADED_GNSS):
-            cands = self.road_graph.query_candidate_segments(self.pos_enu, self.heading_rad, search_radius=60.0, max_candidates=5)
+        self.map_confidence = 0.0
+        self.matched_edge_id = None
+
+        if self.road_graph is not None and self.gnss_engine.mode in (
+            NavigationMode.GNSS_BLACKOUT, NavigationMode.DEGRADED_GNSS
+        ):
+            cands = self.road_graph.query_candidate_segments(
+                self.pos_enu, self.heading_rad, search_radius=60.0, max_candidates=5
+            )
             if cands:
-                self.matched_edge_id = cands[0]['edge_id']
-                self.map_confidence = float(np.exp(-cands[0]['perp_dist'] / 20.0))
-                # Soft road centerline guidance
-                matched_proj = 0.8 * self.pos_enu + 0.2 * cands[0]['proj_pos']
-                self.pos_enu = matched_proj
-            else:
-                self.matched_edge_id = None
-                self.map_confidence = 0.0
+                best = cands[0]
+                d_perp    = float(best.get('perp_dist', 60.0))
+                proj_pos  = best['proj_pos']
+                self.matched_edge_id = best['edge_id']
+
+                # Position uncertainty from filter covariance (2D sigma trace)
+                sigma_pos = float(np.sqrt(np.trace(self.pos_cov)))
+
+                # Confidence: decays with perpendicular distance and position uncertainty
+                alpha = (
+                    np.exp(-d_perp   / _MAP_PERP_SCALE) *
+                    np.exp(-sigma_pos / _MAP_SIG_SCALE)
+                )
+                alpha = float(np.clip(alpha, 0.0, 1.0))
+
+                # Blend weight — confidence-gated, capped at MAP_MAX_WEIGHT
+                map_weight = _MAP_MAX_WEIGHT * alpha
+                self.map_confidence = alpha
+
+                # Apply soft road guidance only when confident
+                if map_weight > 0.01:  # skip negligible corrections
+                    matched_proj = (1.0 - map_weight) * self.pos_enu + map_weight * proj_pos
+                    self.pos_enu = matched_proj
+
 
         # Convert back to Geodetic
         lat_cur, lon_cur, _ = enu_to_geodetic(self.pos_enu[0], self.pos_enu[1], 0.0, self.lat0, self.lon0, self.alt0)

@@ -1,0 +1,28 @@
+{
+  "experiment": "limu_bert_frozen_nio_ablation",
+  "timestamp": "2026-09-17T00:20:38.685354Z",
+  "session": "S1",
+  "driver": "Driver A (held-out test)",
+  "model_A": {
+    "label": "A_RawIMU_NIO_v2_Fixed",
+    "displacement_rmse_m": 62.066,
+    "displacement_mae_m": 45.479,
+    "displacement_p95_m": 123.707,
+    "velocity_rmse_mps": 7.258,
+    "inference_latency_ms_per_sample": 0.0287
+  },
+  "model_B": {
+    "label": "B_LIMUBERT_Frozen_NIO",
+    "displacement_rmse_m": 68.504,
+    "displacement_mae_m": 48.833,
+    "displacement_p95_m": 136.511,
+    "velocity_rmse_mps": 7.634,
+    "inference_latency_ms_per_sample": 0.0681
+  },
+  "displacement_rmse_improvement_m": -6.438,
+  "displacement_rmse_improvement_pct": -10.37,
+  "verdict": "LIMU-BERT DEGRADES NIO \u2192 keep offline (latency penalty not justified)",
+  "limu_bert_checkpoint": "checkpoints/limu_bert/limu_bert_best.pt",
+  "nio_reference_checkpoint": "checkpoints/nio_fixed/nio_fixed_best.pt",
+  "limu_bert_nio_checkpoint": "checkpoints/limu_bert_nio/limu_bert_nio_best.pt"
+}

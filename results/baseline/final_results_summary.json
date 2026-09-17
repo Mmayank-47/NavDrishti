@@ -1,0 +1,292 @@
+{
+  "_meta": {
+    "project": "SIH PS 26168 - Intelligent Dead Reckoning",
+    "report_date": "2026-09-15",
+    "audit_type": "FORENSIC_INSPECTION",
+    "final_verdict": "NOT_YET_VERIFIED"
+  },
+  "model_inventory": {
+    "IMU_Preprocessor": {
+      "implemented": true,
+      "trained": false,
+      "tested": true,
+      "final_pipeline": true,
+      "status": "IMPLEMENTED_AND_USED",
+      "dataset": "IO-VNBD (all sessions)",
+      "main_input": "Raw accel/gyro (B,N,3)",
+      "main_output": "Filtered accel/gyro, ZUPT mask"
+    },
+    "PhoneVehicleAlignment": {
+      "implemented": true,
+      "trained": false,
+      "tested": true,
+      "final_pipeline": true,
+      "status": "IMPLEMENTED_AND_USED",
+      "dataset": "IO-VNBD (all sessions)",
+      "main_input": "Raw accel/gyro arrays",
+      "main_output": "Rotation matrix R_p2v (3x3)"
+    },
+    "LIMU_BERT": {
+      "implemented": true,
+      "trained": true,
+      "tested": true,
+      "final_pipeline": false,
+      "status": "TRAINED_NOT_IN_FINAL_PIPELINE",
+      "dataset": "IO-VNBD train sessions (M,Vf,Vta,Vtb,Vw)",
+      "epochs": 80,
+      "params": 548102,
+      "best_val_loss": 0.153625,
+      "test_reconstruction_mse": 0.194394,
+      "main_input": "IMU sequence (B,120,6)",
+      "main_output": "Latent features (B,120,128) - offline only"
+    },
+    "NeuralInertialOdometry_TCN": {
+      "implemented": true,
+      "trained": true,
+      "tested": true,
+      "final_pipeline": true,
+      "status": "IMPLEMENTED_TRAINED_TESTED_USED",
+      "dataset": "IO-VNBD (13303 train windows from M+Vf+Vta+Vtb+Vw)",
+      "epochs": 100,
+      "params": 507654,
+      "best_val_loss": 18.1588,
+      "val_displacement_rmse_m": 60.495,
+      "test_displacement_rmse_m": 63.906,
+      "test_velocity_rmse_mps": 7.122,
+      "velocity_correlation": 0.2742,
+      "main_input": "IMU sequence (B,100,6) @ 10Hz",
+      "main_output": "displacement [dx,dy] + velocity [vfwd,vlat] + log_variance"
+    },
+    "KalmanNet": {
+      "implemented": true,
+      "trained": true,
+      "tested": true,
+      "final_pipeline": true,
+      "status": "IMPLEMENTED_TRAINED_TESTED_USED",
+      "dataset": "IO-VNBD (train sessions)",
+      "epochs": 50,
+      "params": 55176,
+      "best_val_loss": 1597.68,
+      "test_pos_rmse_37km_m": 2514.68,
+      "test_drift_pct_37km": 11.19,
+      "main_input": "state innovation, measurement innovation, delta_z",
+      "main_output": "Adaptive Kalman Gain K_k (4x2)"
+    },
+    "InvariantESKF": {
+      "implemented": true,
+      "trained": false,
+      "tested": true,
+      "final_pipeline": true,
+      "status": "IMPLEMENTED_TESTED_USED_CLASSICAL",
+      "dataset": "IO-VNBD (Y1 validation, S1 test)",
+      "main_input": "IMU accel/gyro + GNSS/ZUPT/NHC measurements",
+      "main_output": "15-state error correction -> nominal pos/vel/att update"
+    },
+    "VehicleKinematicConstraints_NHC": {
+      "implemented": true,
+      "trained": false,
+      "tested": true,
+      "final_pipeline": true,
+      "status": "IMPLEMENTED_TESTED_USED_CLASSICAL",
+      "dataset": "IO-VNBD",
+      "main_input": "v_nav, quaternion, gyro_body",
+      "main_output": "NHC measurement (H, y, R) for ESKF update"
+    },
+    "RobustGNSSFusionEngine": {
+      "implemented": true,
+      "trained": false,
+      "tested": true,
+      "final_pipeline": true,
+      "status": "IMPLEMENTED_TESTED_USED_CLASSICAL",
+      "dataset": "IO-VNBD S1",
+      "tunnel_drift_robust_m": 143.23,
+      "tunnel_drift_pct": 18.59,
+      "recovery_jump_m": 4.68,
+      "outlier_rejection_rate_pct": 100.0,
+      "main_input": "GNSS position, HDOP, predicted state",
+      "main_output": "Gated/annealed innovation + mode state"
+    },
+    "MapGNN": {
+      "implemented": true,
+      "trained": true,
+      "tested": true,
+      "final_pipeline": true,
+      "status": "IMPLEMENTED_TRAINED_TESTED_USED",
+      "dataset": "IO-VNBD (15 train sessions + OSM graph from GT trajectories)",
+      "epochs": 40,
+      "params": 25985,
+      "top1_train_accuracy_pct": 85.3,
+      "top1_test_accuracy_pct": 56.69,
+      "main_input": "Vehicle state query (6) + K=5 candidate features (6) + adjacency",
+      "main_output": "Log-softmax probability over candidate road segments"
+    },
+    "TemporalViterbiMatcher": {
+      "implemented": true,
+      "trained": false,
+      "tested": true,
+      "final_pipeline": true,
+      "status": "IMPLEMENTED_TESTED_USED_CLASSICAL",
+      "main_input": "MapGNN log-probabilities + transition model",
+      "main_output": "Topologically consistent road path"
+    },
+    "OdoNet": {
+      "implemented": false,
+      "trained": false,
+      "tested": false,
+      "final_pipeline": false,
+      "status": "NOT_IMPLEMENTED_SEPARATELY",
+      "note": "Folded into NeuralInertialOdometry velocity head. checkpoints/odonet/ is EMPTY."
+    }
+  },
+  "dataset_usage": {
+    "IO_VNBD": {
+      "role": "Primary real vehicle dataset",
+      "used_for_training": true,
+      "used_for_testing": true,
+      "split_method": "session_level",
+      "train_sessions": "M(Driver B), Vf/Vta/Vtb/Vw(Driver E)",
+      "val_sessions": "Y(Driver D)",
+      "test_sessions": "S1(Driver A)",
+      "size_mb": 3726.1,
+      "total_sessions": 30,
+      "sampling_rate_hz": 10.0,
+      "sensors": "Smartphone IMU (accel,gyro,gravity,mag,orientation) + GNSS + Vehicle CAN-bus"
+    },
+    "GNSS_Interference_Part_III": {
+      "role": "GNSS spoofing/jamming experiments",
+      "used_for_training": false,
+      "used_for_testing": false,
+      "note": "Audited (5 pvtSolution JSON files) but no executed experiments found using this dataset"
+    },
+    "NavICGNSS": {
+      "role": "Android raw GNSS measurements",
+      "used_for_training": false,
+      "used_for_testing": false,
+      "note": "3 RINEX log files audited but no executed experiments found using this dataset"
+    },
+    "MOTOR": {
+      "role": "Additional vehicle/motorcycle data",
+      "used_for_training": false,
+      "used_for_testing": false,
+      "note": "0 sessions audited. Dataset schema not confirmed for use."
+    },
+    "OSM": {
+      "role": "OpenStreetMap road network for GNN map matching",
+      "used_for_training": false,
+      "used_for_testing": false,
+      "note": "PBF file NOT parsed. Road graph built from IO-VNBD GT trajectories via RoadNetworkGraph.build_from_trajectories()"
+    }
+  },
+  "performance_metrics": {
+    "ESKF_baseline_60s": {
+      "dataset": "IO-VNBD Y1 (1027.6m)",
+      "drift_pct": 85.05,
+      "drift_m": 873.93
+    },
+    "KalmanNet_37km_continuous_dr": {
+      "dataset": "IO-VNBD S1 (37246.5m, 5174.6s)",
+      "pos_rmse_m": 2514.68,
+      "final_drift_m": 4167.94,
+      "drift_pct": 11.19
+    },
+    "GNSS_Fusion_60s_tunnel": {
+      "dataset": "IO-VNBD S1 (400s eval)",
+      "tunnel_drift_robust_m": 143.23,
+      "tunnel_drift_pct": 18.59,
+      "recovery_jump_m": 4.68
+    },
+    "Map_Matching_complete_system": {
+      "dataset": "IO-VNBD S1 (300s eval, 3476m)",
+      "pos_rmse_m": 29.9,
+      "p95_m": 45.26,
+      "max_m": 75.81
+    },
+    "Final_Benchmark_10s": {
+      "dataset": "IO-VNBD S1",
+      "distance_m": 8.844,
+      "drift_proposed_m": 10.48,
+      "drift_pct": 118.49,
+      "recovery_jump_m": 0.919,
+      "sih_pass": false
+    },
+    "Final_Benchmark_30s": {
+      "dataset": "IO-VNBD S1",
+      "distance_m": 300.39,
+      "drift_proposed_m": 124.52,
+      "drift_pct": 41.45,
+      "recovery_jump_m": 5.61,
+      "sih_pass": false
+    },
+    "Final_Benchmark_60s": {
+      "dataset": "IO-VNBD S1",
+      "distance_m": 606.29,
+      "drift_proposed_m": 522.16,
+      "drift_pct": 86.12,
+      "recovery_jump_m": 20.49,
+      "sih_pass": false
+    }
+  },
+  "sih_compliance": {
+    "drift_less_than_10pct": {
+      "required": true,
+      "result": "FAIL - all 3 tested windows exceed 10% (10s: 118.5%, 30s: 41.5%, 60s: 86.1%)",
+      "status": "FAIL"
+    },
+    "scenario_50m_3_5s": {
+      "required": true,
+      "result": "NOT_TESTED - no explicit 50m/3-5s scenario in executed artifacts",
+      "status": "NOT_TESTED"
+    },
+    "scenario_1km_60s": {
+      "required": true,
+      "result": "NOT_TESTED - 60s window only traveled 606m not 1km. ESKF baseline tested 1027m but not final system.",
+      "status": "NOT_TESTED"
+    },
+    "zero_jump_recovery_less_05m": {
+      "required": true,
+      "result": "10s window: 0.92m (close), 30s window: 5.61m (FAIL), 60s window: 20.49m (FAIL). Dramatic improvement over naive (288m->5.61m) but not <0.5m.",
+      "status": "FAIL"
+    },
+    "io_vnbd_dataset_used": {
+      "required": true,
+      "result": "PASS - IO-VNBD is primary benchmark dataset for all training and testing",
+      "status": "PASS"
+    },
+    "smartphone_operation": {
+      "required": true,
+      "result": "PASS - IO-VNBD smartphone CSV data used. 10 Hz smartphone IMU pipeline confirmed.",
+      "status": "PASS"
+    },
+    "10hz_output_rate": {
+      "required": true,
+      "result": "PASS - configs/runtime.yaml: navigation_output_hz: 10. Pipeline operates at 10 Hz (dt=0.1s)",
+      "status": "PASS"
+    },
+    "external_imu_support": {
+      "required": true,
+      "result": "NOT_TESTED - code designed for external IMU (200Hz FOG) but no FOG dataset tested",
+      "status": "NOT_VERIFIED"
+    },
+    "map_matching": {
+      "required": "expected",
+      "result": "IMPLEMENTED and TESTED. MapGNN + Viterbi trained and benchmarked. Mode E RMSE=29.90m vs Pure DR 24.89m.",
+      "status": "IMPLEMENTED_NOT_IMPROVING"
+    },
+    "mobile_edge_deployment": {
+      "required": "expected",
+      "result": "PASS - ONNX export + INT8 quantization complete. 3.67ms per step, 96.33% CPU headroom at 10Hz",
+      "status": "PASS"
+    }
+  },
+  "deployment_metrics": {
+    "total_params_all_models": 1136917,
+    "total_onnx_fp32_mb": 5.02,
+    "total_onnx_int8_mb": 2.068,
+    "step_latency_cpu_ms": 3.671,
+    "cpu_headroom_10hz_pct": 96.33,
+    "is_realtime_10hz_compliant": true,
+    "numeric_equivalence_all_models": true
+  },
+  "final_verdict": "NOT_YET_VERIFIED",
+  "verdict_rationale": "All 3 tested GNSS-denied windows FAIL the <10% drift requirement. 10s: 118.5%, 30s: 41.5%, 60s: 86.1%. The critical SIH scenarios (~50m/3-5s and ~1km/60s) were NOT TESTED. Recovery jump exceeds <0.5m threshold in 30s and 60s cases. The system does demonstrate massive improvement over baselines (89% drift reduction, 99% recovery jump reduction) and passes deployment requirements, but does not satisfy the primary SIH PS 26168 drift specification on the available executed test data."
+}

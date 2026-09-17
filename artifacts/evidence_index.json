@@ -1,0 +1,431 @@
+{
+  "_meta": {
+    "project": "SIH PS 26168 - Intelligent Dead Reckoning",
+    "report_date": "2026-09-15",
+    "audit_type": "FORENSIC_INSPECTION",
+    "note": "Every value below is traceable to an actual file in the repository."
+  },
+  "training_environment": {
+    "hostname": {
+      "value": "ip-10-192-28-132",
+      "source": "artifacts/gpu_preflight.json",
+      "source_location": "line 4",
+      "verified": true
+    },
+    "python_version": {
+      "value": "3.12.11 | packaged by Anaconda, Inc.",
+      "source": "artifacts/gpu_preflight.json",
+      "source_location": "line 5",
+      "verified": true
+    },
+    "pytorch_version": {
+      "value": "2.8.0+cu128",
+      "source": "artifacts/gpu_preflight.json",
+      "source_location": "line 6",
+      "verified": true
+    },
+    "cuda_version": {
+      "value": "12.8",
+      "source": "artifacts/gpu_preflight.json",
+      "source_location": "line 8",
+      "verified": true
+    },
+    "gpu_name": {
+      "value": "Tesla T4",
+      "source": "artifacts/gpu_preflight.json",
+      "source_location": "line 13-14",
+      "verified": true
+    },
+    "gpu_vram_gb": {
+      "value": 14.56,
+      "source": "artifacts/gpu_preflight.json",
+      "source_location": "line 15",
+      "verified": true
+    },
+    "onnx_runtime_version": {
+      "value": "1.30.0",
+      "source": "results/model_export_metrics.json",
+      "source_location": "line 3",
+      "verified": true
+    },
+    "training_platform": {
+      "value": "Lightning AI Studio musing-faraday-18",
+      "source": "configs/lightning.env",
+      "source_location": "line 10",
+      "verified": true
+    }
+  },
+  "dataset": {
+    "io_vnbd_size_mb": {
+      "value": 3726.1,
+      "source": "docs/dataset_audit.md",
+      "source_location": "line 13",
+      "verified": true
+    },
+    "io_vnbd_sessions_audited": {
+      "value": 30,
+      "source": "docs/dataset_audit.md",
+      "source_location": "line 13",
+      "verified": true
+    },
+    "io_vnbd_sampling_rate_hz": {
+      "value": 10.0,
+      "source": "docs/dataset_audit.md",
+      "source_location": "lines 29-48 Est. Hz col",
+      "verified": true
+    },
+    "train_drivers": {
+      "value": [
+        "M (Driver B)",
+        "Vf (Driver E)",
+        "Vta (Driver E)",
+        "Vtb (Driver E)",
+        "Vw (Driver E)"
+      ],
+      "source": "artifacts/dataset_manifest.json",
+      "source_location": "lines 79-85",
+      "verified": true
+    },
+    "val_drivers": {
+      "value": [
+        "Y (Driver D)"
+      ],
+      "source": "artifacts/dataset_manifest.json",
+      "source_location": "lines 86-88",
+      "verified": true
+    },
+    "test_drivers": {
+      "value": [
+        "S (Driver A)"
+      ],
+      "source": "artifacts/dataset_manifest.json",
+      "source_location": "lines 89-91",
+      "verified": true
+    },
+    "train_windows_inertial_odometry": {
+      "value": 13303,
+      "source": "docs/phase_4_inertial_odometry_report.md",
+      "source_location": "line 38",
+      "verified": true
+    },
+    "session_M_duration_s": {
+      "value": 6171.7,
+      "source": "docs/phase_1_preprocessing_report.md",
+      "source_location": "line 38",
+      "verified": true
+    },
+    "test_session_S1_distance_m": {
+      "value": 37246.5,
+      "source": "results/kalmannet_results.json",
+      "source_location": "line 4",
+      "verified": true
+    },
+    "test_session_S1_duration_s": {
+      "value": 5174.6,
+      "source": "results/kalmannet_results.json",
+      "source_location": "line 6",
+      "verified": true
+    }
+  },
+  "limu_bert": {
+    "epochs_trained": {
+      "value": 80,
+      "source": "results/limu_bert_results.json",
+      "source_location": "line 3",
+      "verified": true
+    },
+    "best_val_loss": {
+      "value": 0.153625,
+      "source": "results/limu_bert_results.json",
+      "source_location": "line 4",
+      "verified": true
+    },
+    "final_train_loss": {
+      "value": 0.730231,
+      "source": "results/limu_bert_results.json",
+      "source_location": "line 5",
+      "verified": true
+    },
+    "trainable_params": {
+      "value": 548102,
+      "source": "results/limu_bert_results.json",
+      "source_location": "line 6",
+      "verified": true
+    },
+    "test_reconstruction_mse": {
+      "value": 0.194394,
+      "source": "results/limu_bert_test_results.json",
+      "source_location": "line 4",
+      "verified": true
+    },
+    "checkpoint_size_bytes": {
+      "value": 7158182,
+      "source": "filesystem checkpoints/limu_bert/limu_bert_best.pt",
+      "source_location": "file size",
+      "verified": true
+    }
+  },
+  "inertial_odometry": {
+    "epochs_trained": {
+      "value": 100,
+      "source": "results/inertial_odometry_training_summary.json",
+      "source_location": "line 3",
+      "verified": true
+    },
+    "best_val_loss": {
+      "value": 18.1588,
+      "source": "results/inertial_odometry_training_summary.json",
+      "source_location": "line 4",
+      "verified": true
+    },
+    "val_displacement_rmse_m": {
+      "value": 60.495,
+      "source": "results/inertial_odometry_training_summary.json",
+      "source_location": "line 5",
+      "verified": true
+    },
+    "test_displacement_rmse_m": {
+      "value": 63.906,
+      "source": "results/inertial_odometry_results.json",
+      "source_location": "line 4",
+      "verified": true
+    },
+    "test_displacement_mae_m": {
+      "value": 49.295,
+      "source": "results/inertial_odometry_results.json",
+      "source_location": "line 5",
+      "verified": true
+    },
+    "test_velocity_rmse_mps": {
+      "value": 7.122,
+      "source": "results/inertial_odometry_results.json",
+      "source_location": "line 7",
+      "verified": true
+    },
+    "velocity_correlation": {
+      "value": 0.2742,
+      "source": "results/inertial_odometry_results.json",
+      "source_location": "line 9",
+      "verified": true
+    },
+    "uncertainty_sigma_mean": {
+      "value": 8508032.0,
+      "source": "results/inertial_odometry_results.json",
+      "source_location": "line 10",
+      "verified": true,
+      "note": "Extreme value indicating numerical instability in uncertainty head"
+    },
+    "checkpoint_size_bytes": {
+      "value": 6134449,
+      "source": "filesystem checkpoints/inertial_odometry/inertial_odometry_best.pt",
+      "source_location": "file size",
+      "verified": true
+    }
+  },
+  "kalmannet": {
+    "best_epoch": {
+      "value": 50,
+      "source": "results/kalmannet_training_metrics.json",
+      "source_location": "line 3",
+      "verified": true
+    },
+    "best_val_loss": {
+      "value": 1597.68,
+      "source": "results/kalmannet_training_metrics.json",
+      "source_location": "line 2",
+      "verified": true
+    },
+    "trainable_params": {
+      "value": 55176,
+      "source": "results/model_export_metrics.json",
+      "source_location": "line 110",
+      "verified": true
+    },
+    "test_pos_rmse_over_37km_m": {
+      "value": 2514.68,
+      "source": "results/kalmannet_results.json",
+      "source_location": "line 8",
+      "verified": true
+    },
+    "test_drift_pct_over_37km": {
+      "value": 11.19,
+      "source": "results/kalmannet_results.json",
+      "source_location": "line 13",
+      "verified": true
+    },
+    "test_final_drift_m": {
+      "value": 4167.94,
+      "source": "results/kalmannet_results.json",
+      "source_location": "line 11",
+      "verified": true
+    },
+    "checkpoint_size_bytes": {
+      "value": 678673,
+      "source": "filesystem checkpoints/kalmannet/kalmannet_best.pt",
+      "source_location": "file size",
+      "verified": true
+    }
+  },
+  "map_gnn": {
+    "epochs_trained": {
+      "value": 40,
+      "source": "docs/phase_7_map_matching_report.md",
+      "source_location": "line 71",
+      "verified": true
+    },
+    "top1_train_accuracy_pct": {
+      "value": 85.3,
+      "source": "docs/phase_7_map_matching_report.md",
+      "source_location": "line 72",
+      "verified": true
+    },
+    "top1_test_accuracy_pct": {
+      "value": 56.694,
+      "source": "results/map_matching_results.json",
+      "source_location": "line 6",
+      "verified": true
+    },
+    "trainable_params": {
+      "value": 25985,
+      "source": "results/model_export_metrics.json",
+      "source_location": "line 161",
+      "verified": true
+    },
+    "checkpoint_size_bytes": {
+      "value": 110689,
+      "source": "filesystem checkpoints/map_gnn/map_gnn_best.pt",
+      "source_location": "file size",
+      "verified": true
+    },
+    "mode_e_complete_rmse_m": {
+      "value": 29.901,
+      "source": "results/map_matching_results.json",
+      "source_location": "line 12",
+      "verified": true
+    }
+  },
+  "gnss_fusion": {
+    "recovery_jump_robust_m": {
+      "value": 4.68,
+      "source": "results/gnss_fusion_results.json",
+      "source_location": "line 17",
+      "verified": true
+    },
+    "tunnel_drift_robust_m": {
+      "value": 143.23,
+      "source": "results/gnss_fusion_results.json",
+      "source_location": "line 11",
+      "verified": true
+    },
+    "tunnel_drift_pct_robust": {
+      "value": 18.59,
+      "source": "results/gnss_fusion_results.json",
+      "source_location": "line 13",
+      "verified": true
+    },
+    "outlier_rejection_rate_pct": {
+      "value": 100.0,
+      "source": "results/gnss_fusion_results.json",
+      "source_location": "line 20",
+      "verified": true
+    }
+  },
+  "final_benchmark": {
+    "window_10s_drift_proposed_m": {
+      "value": 10.48,
+      "source": "results/final_sih_benchmark_results.json",
+      "source_location": "line 12",
+      "verified": true
+    },
+    "window_10s_drift_pct": {
+      "value": 118.49,
+      "source": "results/final_sih_benchmark_results.json",
+      "source_location": "line 13",
+      "verified": true
+    },
+    "window_10s_recovery_jump_m": {
+      "value": 0.919,
+      "source": "results/final_sih_benchmark_results.json",
+      "source_location": "line 16",
+      "verified": true
+    },
+    "window_30s_drift_proposed_m": {
+      "value": 124.52,
+      "source": "results/final_sih_benchmark_results.json",
+      "source_location": "line 26",
+      "verified": true
+    },
+    "window_30s_drift_pct": {
+      "value": 41.45,
+      "source": "results/final_sih_benchmark_results.json",
+      "source_location": "line 27",
+      "verified": true
+    },
+    "window_30s_recovery_jump_m": {
+      "value": 5.61,
+      "source": "results/final_sih_benchmark_results.json",
+      "source_location": "line 30",
+      "verified": true
+    },
+    "window_60s_drift_proposed_m": {
+      "value": 522.16,
+      "source": "results/final_sih_benchmark_results.json",
+      "source_location": "line 40",
+      "verified": true
+    },
+    "window_60s_drift_pct": {
+      "value": 86.12,
+      "source": "results/final_sih_benchmark_results.json",
+      "source_location": "line 41",
+      "verified": true
+    },
+    "window_60s_recovery_jump_m": {
+      "value": 20.49,
+      "source": "results/final_sih_benchmark_results.json",
+      "source_location": "line 44",
+      "verified": true
+    },
+    "all_windows_sih_10pct_pass": {
+      "value": false,
+      "source": "results/final_sih_benchmark_results.json",
+      "source_location": "lines 18 32 46",
+      "verified": true
+    }
+  },
+  "deployment": {
+    "step_latency_cpu_ms": {
+      "value": 3.671,
+      "source": "results/model_export_metrics.json",
+      "source_location": "line 222",
+      "verified": true
+    },
+    "cpu_headroom_pct": {
+      "value": 96.33,
+      "source": "results/model_export_metrics.json",
+      "source_location": "line 223",
+      "verified": true
+    },
+    "is_realtime_10hz_compliant": {
+      "value": true,
+      "source": "results/model_export_metrics.json",
+      "source_location": "line 224",
+      "verified": true
+    },
+    "total_onnx_int8_mb": {
+      "value": 2.068,
+      "source": "results/model_export_metrics.json",
+      "source_location": "line 215",
+      "verified": true
+    }
+  },
+  "not_verified": {
+    "odonet_checkpoint": "checkpoints/odonet/ is EMPTY. OdoNet was folded into NeuralInertialOdometry. No separate OdoNet checkpoint exists.",
+    "sih_50m_scenario": "NOT TESTED. No explicit 50m/3-5s outage scenario executed in final benchmark.",
+    "sih_1km_scenario": "NOT TESTED. 60s window traveled only 606.3m, not 1km.",
+    "limu_bert_in_inference": "LIMU-BERT is NOT called in final_navigation_pipeline.py. It is an offline pretraining artifact only.",
+    "osm_pbf_loaded": "OSM PBF was NOT parsed. Road graph built from trajectory ground-truth via RoadNetworkGraph.build_from_trajectories().",
+    "external_imu_fog": "No FOG IMU dataset tested. Config references 200Hz FOG rate but no FOG data was used.",
+    "heading_error_metric": "No heading RMSE reported in any results file.",
+    "ablation_formal": "Map matching ablation (5 modes) IS performed. Other ablation variants in benchmark.yaml were NOT executed."
+  }
+}

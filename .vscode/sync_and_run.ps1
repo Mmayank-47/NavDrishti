@@ -49,24 +49,27 @@ param (
     [switch]$SyncData  = $false,
 
     # Stage flags (Section 49)
-    [switch]$preflight      = $false,
-    [switch]$audit          = $false,
-    [switch]$preprocess     = $false,
-    [switch]$trainLimu      = $false,
-    [switch]$testLimu       = $false,
-    [switch]$trainOdo       = $false,
-    [switch]$testOdo        = $false,
-    [switch]$trainInertial  = $false,
-    [switch]$testInertial   = $false,
-    [switch]$trainKalmannet = $false,
-    [switch]$testKalmannet  = $false,
-    [switch]$gnssFusion     = $false,
-    [switch]$trainMapGnn    = $false,
-    [switch]$testMapGnn     = $false,
-    [switch]$integration    = $false,
-    [switch]$benchmark      = $false,
-    [switch]$export         = $false,
-    [switch]$full           = $false
+    [switch]$preflight       = $false,
+    [switch]$audit           = $false,
+    [switch]$reaudit         = $false,
+    [switch]$preprocess      = $false,
+    [switch]$trainLimu       = $false,
+    [switch]$testLimu        = $false,
+    [switch]$limuNioAblation = $false,
+    [switch]$trainOdo        = $false,
+    [switch]$testOdo         = $false,
+    [switch]$trainInertial   = $false,
+    [switch]$testInertial    = $false,
+    [switch]$trainKalmannet  = $false,
+    [switch]$testKalmannet   = $false,
+    [switch]$gnssFusion      = $false,
+    [switch]$trainMapGnn     = $false,
+    [switch]$testMapGnn      = $false,
+    [switch]$sihScenarios    = $false,
+    [switch]$integration     = $false,
+    [switch]$benchmark       = $false,
+    [switch]$export          = $false,
+    [switch]$full            = $false
 )
 
 Set-StrictMode -Version Latest
@@ -104,18 +107,21 @@ $OUT_BUNDLE = "sih_results_bundle.tar.gz"
 $stageMap = [ordered]@{
     "preflight"      = "notebooks/00_environment_gpu.ipynb"
     "audit"          = "notebooks/01_dataset_audit.ipynb"
+    "reaudit"        = "notebooks/01b_driver_split_reaudit.ipynb"
     "preprocess"     = "notebooks/02_preprocessing.ipynb"
     "trainLimu"      = "notebooks/05_limu_bert_training.ipynb"
     "testLimu"       = "notebooks/06_limu_bert_testing.ipynb"
+    "limuNioAblation"= "notebooks/05b_limu_bert_nio_ablation.ipynb"
     "trainOdo"       = "notebooks/07_odo_net_training.ipynb"
     "testOdo"        = "notebooks/08_odo_net_testing.ipynb"
-    "trainInertial"  = "notebooks/09_inertial_odometry_training.ipynb"
-    "testInertial"   = "notebooks/10_inertial_odometry_testing.ipynb"
+    "trainInertial"  = "notebooks/09_inertial_odometry_training.ipynb"   # v2 (fixed uncertainty)
+    "testInertial"   = "notebooks/10_inertial_odometry_testing.ipynb"    # baseline vs fixed comparison
     "trainKalmannet" = "notebooks/11_kalmannet_training.ipynb"
     "testKalmannet"  = "notebooks/12_kalmannet_testing.ipynb"
     "gnssFusion"     = "notebooks/14_gnss_fusion.ipynb"
     "trainMapGnn"    = "notebooks/16_map_gnn_training.ipynb"
     "testMapGnn"     = "notebooks/17_map_gnn_testing.ipynb"
+    "sihScenarios"   = "notebooks/19b_sih_scenarios.ipynb"
     "integration"    = "notebooks/20_final_pipeline_integration.ipynb"
     "benchmark"      = "notebooks/21_final_sih_benchmark.ipynb"
     "export"         = "notebooks/23_model_export_and_mobile_validation.ipynb"
@@ -152,6 +158,8 @@ function Invoke-SSH {
         "-o", "StrictHostKeyChecking=no",
         "-o", "UserKnownHostsFile=/dev/null",
         "-o", "UpdateHostKeys=no",
+        "-o", "ServerAliveInterval=30",
+        "-o", "ServerAliveCountMax=10",
         "-i", $KEY_PATH
     )
     if ($Interactive) { $sshArgs += "-t" }

@@ -1,0 +1,53 @@
+{
+  "model": "NeuralInertialOdometry_TCN_v2_FixedUncertainty",
+  "experiment": "nio_fixed_tanh_bounded_logvar",
+  "timestamp": "2026-09-16T22:31:07.935870Z",
+  "git_commit": "NOT_AVAILABLE",
+  "seed": 42,
+  "device": "Tesla T4",
+  "cuda_version": "12.8",
+  "pytorch_version": "2.8.0+cu128",
+  "uncertainty_fix": "BoundedLogVarHead: logvar=6*tanh(raw)+1 \u2192 \u03c3\u2208[0.082m, 91.2m]",
+  "epochs_trained": 17,
+  "best_epoch": 2,
+  "best_val_loss": 14.9921,
+  "final_val_disp_rmse_m": 64.418,
+  "final_val_vel_rmse_mps": 7.342,
+  "final_sigma_mean_m": 16.5938,
+  "total_nan_train_batches": 0,
+  "total_nan_val_batches": 0,
+  "trainable_params": 507654,
+  "window_size": 100,
+  "train_stride": 20,
+  "batch_size": 64,
+  "train_windows": 33206,
+  "val_windows": 2340,
+  "checkpoint_best": "checkpoints/nio_fixed/nio_fixed_best.pt",
+  "checkpoint_last": "checkpoints/nio_fixed/nio_fixed_last.pt",
+  "baseline_comparison": {
+    "baseline_disp_rmse_m": 63.906,
+    "baseline_sigma_mean": 8508032.0,
+    "baseline_source": "results/inertial_odometry_results.json"
+  },
+  "config": {
+    "batch_size": 64,
+    "num_epochs": 100,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "scheduler": "cosine",
+    "window_size": 200,
+    "stride": 50,
+    "tcn_channels": [
+      64,
+      128,
+      256
+    ],
+    "tcn_kernel_size": 3,
+    "dropout": 0.1,
+    "optimizer": "AdamW",
+    "displacement_loss_weight": 1.0,
+    "velocity_loss_weight": 0.5,
+    "uncertainty_loss_weight": 0.1,
+    "checkpoint_dir": "checkpoints/inertial_odometry"
+  }
+}

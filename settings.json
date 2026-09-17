@@ -1,0 +1,71 @@
+{
+  "python.defaultInterpreterPath": "python",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}",
+    "${workspaceFolder}/training",
+    "${workspaceFolder}/INS-GNSS-switching-backend",
+    "${workspaceFolder}/src"
+  ],
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoSearchPaths": true,
+  "python.terminal.activateEnvironment": true,
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "args": ["-NoExit", "-ExecutionPolicy", "Bypass"]
+    }
+  },
+  "files.associations": {
+    "*.csv": "csv",
+    "*.tsv": "tsv",
+    "*.npy": "binary",
+    "*.npz": "binary",
+    "*.pth": "binary",
+    "*.pt": "binary",
+    "*.onnx": "binary"
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/.pytest_cache": true,
+    "**/*.crdownload": true
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/venv/**": true,
+    "**/.venv/**": true,
+    "**/__pycache__/**": true,
+    "**/data/**/clips/**": true,
+    "**/data/**/*.zip": true,
+    "**/.cache/**": true,
+    "**/*.tar.gz": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "**/venv": true,
+    "**/.venv": true,
+    "**/__pycache__": true,
+    "**/data/**/clips": true,
+    "**/data/**/*.zip": true,
+    "**/.cache": true,
+    "**/*.tar.gz": true
+  },
+  "editor.formatOnSave": true,
+  "editor.rulers": [88, 100],
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  }
+}

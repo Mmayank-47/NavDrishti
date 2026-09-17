@@ -1,0 +1,21 @@
+{
+  "session": "S1",
+  "driver": "Driver A",
+  "duration_s": 400.0,
+  "total_distance_m": 3908.539067951876,
+  "tunnel_blackout_s": 60.0,
+  "tunnel_distance_m": 770.6122414863994,
+  "rmse_naive_m": 129.42956652084948,
+  "rmse_robust_m": 81.32187784073855,
+  "tunnel_drift_naive_m": 580.2510859065642,
+  "tunnel_drift_robust_m": 143.227200660435,
+  "tunnel_drift_pct_naive": 75.29741349389207,
+  "tunnel_drift_pct_robust": 18.586156947646,
+  "max_spike_err_naive_m": 26.583244600336513,
+  "max_spike_err_robust_m": 138.06806458025954,
+  "recovery_step_jump_naive_m": 579.3950805664062,
+  "recovery_step_jump_robust_m": 4.6763386726379395,
+  "outliers_injected": 4,
+  "outliers_rejected": 1735,
+  "outlier_rejection_rate_pct": 100.0
+}

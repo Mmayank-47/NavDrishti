@@ -1,0 +1,12 @@
+{
+  "experiment": "kalmannet_fixed_input",
+  "nio_source": "nio_fixed_v2 (BoundedLogVarHead \u2014 sigma FIXED)",
+  "nio_checkpoint": "/home/zeus/content/sih-model-training/checkpoints/nio_fixed/nio_fixed_best.pt",
+  "best_epoch": 23,
+  "best_val_loss": 1652.203612,
+  "final_val_pos_rmse": 23.7504,
+  "final_val_vel_rmse": 42.1602,
+  "epochs_trained": 33,
+  "checkpoint": "checkpoints/kalmannet_fixed_input/kalmannet_best.pt",
+  "device": "cuda"
+}

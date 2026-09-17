@@ -1,0 +1,106 @@
+{
+  "snapshot_timestamp": "2026-09-16T22:19:56.782016Z",
+  "purpose": "Frozen baseline before Phase-1 NIO uncertainty fix retraining",
+  "result_files": {
+    "inertial_odometry_results.json": {
+      "copied": true,
+      "size_bytes": 323
+    },
+    "inertial_odometry_training_summary.json": {
+      "copied": true,
+      "size_bytes": 283
+    },
+    "kalmannet_results.json": {
+      "copied": true,
+      "size_bytes": 700
+    },
+    "kalmannet_training_metrics.json": {
+      "copied": true,
+      "size_bytes": 238
+    },
+    "limu_bert_results.json": {
+      "copied": true,
+      "size_bytes": 200
+    },
+    "limu_bert_test_results.json": {
+      "copied": true,
+      "size_bytes": 107
+    },
+    "map_matching_results.json": {
+      "copied": true,
+      "size_bytes": 562
+    },
+    "gnss_fusion_results.json": {
+      "copied": true,
+      "size_bytes": 732
+    },
+    "eskf_baseline.json": {
+      "copied": true,
+      "size_bytes": 2132
+    },
+    "final_sih_benchmark_results.json": {
+      "copied": true,
+      "size_bytes": 1709
+    },
+    "final_results_summary.json": {
+      "copied": true,
+      "size_bytes": 10807
+    },
+    "model_export_metrics.json": {
+      "copied": true,
+      "size_bytes": 7949
+    }
+  },
+  "checkpoint_sizes_bytes": {
+    "nio_baseline": {
+      "path": "checkpoints/inertial_odometry",
+      "total_bytes": 6134449,
+      "total_mb": 6.134,
+      "files": [
+        ".gitkeep",
+        "inertial_odometry_best.pt"
+      ]
+    },
+    "kalmannet_baseline": {
+      "path": "checkpoints/kalmannet",
+      "total_bytes": 678673,
+      "total_mb": 0.679,
+      "files": [
+        ".gitkeep",
+        "kalmannet_best.pt"
+      ]
+    },
+    "limu_bert_baseline": {
+      "path": "checkpoints/limu_bert",
+      "total_bytes": 7158182,
+      "total_mb": 7.158,
+      "files": [
+        ".gitkeep",
+        "limu_bert_best.pt"
+      ]
+    },
+    "map_gnn_baseline": {
+      "path": "checkpoints/map_gnn",
+      "total_bytes": 110689,
+      "total_mb": 0.111,
+      "files": [
+        ".gitkeep",
+        "map_gnn_best.pt"
+      ]
+    }
+  },
+  "key_metrics": {
+    "nio_displacement_rmse_m": 63.906,
+    "nio_displacement_mae_m": 49.295,
+    "nio_velocity_rmse_mps": 7.122,
+    "nio_uncertainty_sigma_mean": 8508032.0,
+    "knet_drift_pct": null,
+    "knet_pos_rmse_m": null,
+    "benchmark_10s_Outage_drift_pct": 118.493109325907,
+    "benchmark_10s_Outage_recovery_m": 0.9192554187129176,
+    "benchmark_30s_Outage_drift_pct": 41.454008815408756,
+    "benchmark_30s_Outage_recovery_m": 5.611818615779931,
+    "benchmark_60s_Outage_drift_pct": 86.12325229514907,
+    "benchmark_60s_Outage_recovery_m": 20.494273886930536
+  }
+}

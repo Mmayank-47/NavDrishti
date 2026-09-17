@@ -1,0 +1,6 @@
+{
+  "session": "S1",
+  "split": "held_out_test",
+  "reconstruction_mse": 0.194394,
+  "status": "VERIFIED"
+}

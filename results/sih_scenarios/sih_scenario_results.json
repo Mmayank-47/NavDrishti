@@ -1,0 +1,95 @@
+{
+  "experiment": "SIH_mandatory_scenarios",
+  "timestamp": "2026-09-16T23:57:55.638682Z",
+  "session": "S1",
+  "driver": "Driver A (held-out test)",
+  "segment_selection_methodology": {
+    "scenario_A": "Non-overlapping windows: 3-5s, 40-60m, mean_speed\u22655m/s. Applied before evaluation.",
+    "scenario_B": "Non-overlapping windows: 55-65s, 900-1100m. Applied before evaluation."
+  },
+  "scenario_A_50m_3to5s": {
+    "sih_target_final_error_m": 5.0,
+    "segments_found": 0,
+    "results": [
+      {
+        "result": "NOT_TESTABLE_ON_AVAILABLE_DATA",
+        "reason": "No contiguous segment with 40-60m distance and 3-5s duration at \u22655m/s found in S1"
+      }
+    ]
+  },
+  "scenario_B_1km_60s": {
+    "sih_target_final_error_m": 100.0,
+    "segments_found": 8,
+    "results": [
+      {
+        "label": "ScenarioB_seg0",
+        "scenario": {
+          "start_idx": 1090,
+          "end_idx": 1740,
+          "duration_s": 65.0,
+          "distance_m": 944.61,
+          "mean_speed_mps": 3.86,
+          "start_t_s": 109.0,
+          "end_t_s": 174.0
+        },
+        "nio_checkpoint": "/home/zeus/content/sih-model-training/checkpoints/nio_fixed/nio_fixed_best.pt",
+        "knet_checkpoint": "/home/zeus/content/sih-model-training/checkpoints/kalmannet_fixed_input/kalmannet_best.pt",
+        "final_error_m": 999.379,
+        "rmse_m": 607.72,
+        "max_error_m": 999.379,
+        "distance_gt_m": 862.59,
+        "drift_pct": 115.858,
+        "recovery_jump_m": 999.379,
+        "sih_target_m": 100.0,
+        "sih_pass": false,
+        "timestamp": "2026-09-16T23:57:53.863710Z"
+      },
+      {
+        "label": "ScenarioB_seg1",
+        "scenario": {
+          "start_idx": 2210,
+          "end_idx": 2860,
+          "duration_s": 65.0,
+          "distance_m": 909.19,
+          "mean_speed_mps": 3.54,
+          "start_t_s": 221.0,
+          "end_t_s": 286.0
+        },
+        "nio_checkpoint": "/home/zeus/content/sih-model-training/checkpoints/nio_fixed/nio_fixed_best.pt",
+        "knet_checkpoint": "/home/zeus/content/sih-model-training/checkpoints/kalmannet_fixed_input/kalmannet_best.pt",
+        "final_error_m": 1232.239,
+        "rmse_m": 746.38,
+        "max_error_m": 1232.239,
+        "distance_gt_m": 788.13,
+        "drift_pct": 156.35,
+        "recovery_jump_m": 1232.239,
+        "sih_target_m": 100.0,
+        "sih_pass": false,
+        "timestamp": "2026-09-16T23:57:54.716856Z"
+      },
+      {
+        "label": "ScenarioB_seg2",
+        "scenario": {
+          "start_idx": 2929,
+          "end_idx": 3579,
+          "duration_s": 65.0,
+          "distance_m": 941.03,
+          "mean_speed_mps": 3.71,
+          "start_t_s": 292.9,
+          "end_t_s": 357.9
+        },
+        "nio_checkpoint": "/home/zeus/content/sih-model-training/checkpoints/nio_fixed/nio_fixed_best.pt",
+        "knet_checkpoint": "/home/zeus/content/sih-model-training/checkpoints/kalmannet_fixed_input/kalmannet_best.pt",
+        "final_error_m": 1535.571,
+        "rmse_m": 880.143,
+        "max_error_m": 1535.571,
+        "distance_gt_m": 825.33,
+        "drift_pct": 186.055,
+        "recovery_jump_m": 1535.571,
+        "sih_target_m": 100.0,
+        "sih_pass": false,
+        "timestamp": "2026-09-16T23:57:55.625941Z"
+      }
+    ]
+  }
+}

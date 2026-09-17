@@ -1,0 +1,125 @@
+{
+  "_meta": {
+    "project": "SIH PS 26168 - Intelligent Dead Reckoning",
+    "report_version": "v2.1 - Complete with LIMU-BERT Ablation",
+    "generated_at": "2026-09-17T00:24:13.034377+00:00",
+    "hardware": "Tesla T4 15GB on Lightning AI Studio",
+    "verification_rule": "Every single number is traceable to active repository output files."
+  },
+  "phase1_nio_fixed": {
+    "source": "results/nio_fixed/train_metrics.json & test_metrics.json",
+    "train_best_epoch": 2,
+    "train_epochs_trained": 17,
+    "train_best_val_loss": 14.9921,
+    "train_nan_batches": 0,
+    "train_final_sigma_mean_m": 16.5938,
+    "test_held_out_driver": "Driver A (held-out test)",
+    "test_displacement_rmse_baseline_m": 63.959,
+    "test_displacement_rmse_fixed_m": 62.069,
+    "test_displacement_mae_baseline_m": 49.24,
+    "test_displacement_mae_fixed_m": 45.477,
+    "test_sigma_mean_baseline_m": 11563918.0,
+    "test_sigma_mean_fixed_m": 16.591,
+    "test_sigma_max_baseline_m": 46179393536.0,
+    "test_sigma_max_fixed_m": 33.1155,
+    "test_velocity_corr_baseline": 0.2804,
+    "test_velocity_corr_fixed": 0.3054
+  },
+  "phase2_dataset_audit": {
+    "source": "results/dataset_audit.json",
+    "total_sessions": 72,
+    "train_sessions": 65,
+    "val_sessions": 1,
+    "test_sessions": 6,
+    "train_distance_m": 997798.7,
+    "total_nio_train_windows": 34290,
+    "held_out_test_sessions": [
+      "S1",
+      "S2",
+      "S3a",
+      "S3b",
+      "S3c",
+      "S4"
+    ]
+  },
+  "phase3_limu_bert_ablation": {
+    "source": "results/limu_bert_ablation/ablation_results.json",
+    "model_A_raw_nio_rmse_m": 62.066,
+    "model_A_raw_nio_latency_ms": 0.0287,
+    "model_B_limu_nio_rmse_m": 68.504,
+    "model_B_limu_nio_latency_ms": 0.0681,
+    "displacement_rmse_improvement_m": -6.438,
+    "displacement_rmse_improvement_pct": -10.37,
+    "verdict": "LIMU-BERT DEGRADES NIO \u2192 keep offline (latency penalty not justified)"
+  },
+  "phase4_kalmannet_fixed": {
+    "source": "results/kalmannet_fixed_input/kalmannet_training_metrics.json & results/kalmannet_results.json",
+    "nio_input_source": "nio_fixed_v2 (BoundedLogVarHead \u2014 sigma FIXED)",
+    "best_epoch": 23,
+    "epochs_trained": 33,
+    "test_session": "S1",
+    "total_distance_m": 37246.53863796809,
+    "duration_s": 5174.6,
+    "drift_pct_pure_imu": 5643.102819049587,
+    "drift_pct_fixed_gain_0_80": 109.58661948087513,
+    "drift_pct_kalmannet": 8.850303132269476,
+    "final_drift_knet_m": 3296.4315757380505,
+    "rmse_pure_pos_m": 961646.082695819,
+    "rmse_fixed_pos_m": 27255.597190362096,
+    "rmse_knet_pos_m": 1571.7109858040487,
+    "kalman_gain_dynamic_range": [
+      -0.9999688863754272,
+      0.999977171421051
+    ]
+  },
+  "phase5_map_matching": {
+    "source": "results/map_matching_results.json",
+    "top1_accuracy_pct": 56.694813027744274,
+    "top3_accuracy_pct": 78.40772014475272,
+    "mode_a_pure_dr_rmse_m": 24.890094429590654,
+    "mode_b_classical_rmse_m": 33.0653157343478,
+    "mode_c_gnn_rmse_m": 33.56491452559614,
+    "mode_d_gnn_viterbi_rmse_m": 33.60209715343429,
+    "mode_e_complete_system_rmse_m": 29.90058108779302,
+    "mode_e_p95_error_m": 45.255300397086685
+  },
+  "phase6_sih_scenarios": {
+    "source": "results/sih_scenarios/sih_scenario_results.json",
+    "scenario_a_50m_status": "NOT_TESTABLE_ON_AVAILABLE_DATA",
+    "scenario_a_reason": "No contiguous segment with 40-60m distance and 3-5s duration at \u22655m/s found in S1",
+    "scenario_b_1km_segments_evaluated": 8,
+    "scenario_b_seg0_drift_pct": 115.858,
+    "scenario_b_seg0_final_error_m": 999.379
+  },
+  "phase7_sih_benchmark": {
+    "source": "results/final_sih_benchmark_results.json",
+    "10s_drift_m": 12.159752427891334,
+    "10s_recovery_jump_proposed_m": 0.18522367524325214,
+    "10s_recovery_jump_naive_m": 8.844090577978907,
+    "30s_drift_m": 917.3220092416434,
+    "30s_recovery_jump_proposed_m": 31.5950850523529,
+    "30s_recovery_jump_naive_m": 288.24943550267716,
+    "60s_drift_m": 537.3325271106246,
+    "60s_drift_pure_imu_m": 1478.6195824502197,
+    "60s_recovery_jump_proposed_m": 20.802779645555805,
+    "60s_recovery_jump_naive_m": 660.2973800562237
+  },
+  "phase8_export_and_edge": {
+    "source": "results/model_export_metrics.json",
+    "models_verified": [
+      "limu_bert",
+      "inertial_odometry",
+      "kalmannet",
+      "map_gnn"
+    ],
+    "numeric_equivalence_passed_all": true,
+    "total_pytorch_size_mb": 13.42861270904541,
+    "total_onnx_fp32_size_mb": 5.020198822021484,
+    "total_onnx_int8_size_mb": 2.0680322647094727,
+    "overall_size_reduction_pct": 58.80576969107495,
+    "smartphone_budget_ms": 100.0,
+    "estimated_step_latency_cpu_ms": 3.868459499395976,
+    "available_cpu_headroom_pct": 96.13154050060402,
+    "is_realtime_compliant": true
+  }
+}

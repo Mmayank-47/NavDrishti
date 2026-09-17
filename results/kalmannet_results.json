@@ -4,19 +4,19 @@
   "total_distance_m": 37246.53863796809,
   "duration_s": 5174.6,
   "rmse_pure_pos_m": 961646.082695819,
-  "rmse_fixed_pos_m": 27238.886771530902,
-  "rmse_knet_pos_m": 2514.6751556560725,
+  "rmse_fixed_pos_m": 27255.597190362096,
+  "rmse_knet_pos_m": 1571.7109858040487,
   "final_drift_pure_m": 2101860.471877571,
-  "final_drift_fixed_m": 40798.85251133292,
-  "final_drift_knet_m": 4167.944093415374,
+  "final_drift_fixed_m": 40817.22256698723,
+  "final_drift_knet_m": 3296.4315757380505,
   "drift_pct_pure": 5643.102819049587,
-  "drift_pct_fixed": 109.53729931227407,
-  "drift_pct_knet": 11.19015147669772,
-  "rmse_knet_vel_mps": 55.86842727661133,
+  "drift_pct_fixed": 109.58661948087513,
+  "drift_pct_knet": 8.850303132269476,
+  "rmse_knet_vel_mps": 55.83424377441406,
   "kalman_gain_stats": {
-    "mean_k_ve": 0.05318330228328705,
-    "std_k_ve": 0.20599904656410217,
-    "min_k_ve": -0.9973581433296204,
-    "max_k_ve": 0.9999964237213135
+    "mean_k_ve": 0.1056588664650917,
+    "std_k_ve": 0.26408472657203674,
+    "min_k_ve": -0.9999688863754272,
+    "max_k_ve": 0.999977171421051
   }
 }

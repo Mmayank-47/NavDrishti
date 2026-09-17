@@ -1,0 +1,8 @@
+{
+  "model": "LIMU-BERT",
+  "epochs_trained": 80,
+  "best_val_loss": 0.153625,
+  "final_train_loss": 0.730231,
+  "trainable_params": 548102,
+  "checkpoint": "checkpoints/limu_bert/limu_bert_best.pt"
+}

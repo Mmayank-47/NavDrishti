@@ -1,0 +1,12 @@
+{
+  "session": "S1",
+  "split": "held_out_test",
+  "displacement_rmse_m": 63.906,
+  "displacement_mae_m": 49.295,
+  "displacement_p95_m": 123.809,
+  "velocity_rmse_mps": 7.122,
+  "velocity_rmse_kmh": 25.64,
+  "velocity_correlation_with_can": 0.2742,
+  "mean_predicted_uncertainty_sigma": 8508032.0,
+  "status": "VERIFIED"
+}
