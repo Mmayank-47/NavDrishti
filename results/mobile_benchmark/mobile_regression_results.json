@@ -1,0 +1,31 @@
+{
+  "checkpoint_path": "/home/zeus/content/sih-model-training/checkpoints/nio_velocity_finetuned/nio_vel_best.pt",
+  "fp32_model_size_mb": 1.9617538452148438,
+  "int8_model_size_mb": 0.54449462890625,
+  "numerical_equivalence": {
+    "disp_max_abs_diff": 6.556510925292969e-07,
+    "vel_max_abs_diff": 7.450580596923828e-09,
+    "logvar_max_abs_diff": 2.384185791015625e-07,
+    "passed": true
+  },
+  "fp32_benchmark": {
+    "mean_ms": 1.1666146799950639,
+    "median_ms": 0.9581699999898774,
+    "p95_ms": 1.482407050036727,
+    "min_ms": 0.8746180001253379,
+    "max_ms": 2.5398720001703623,
+    "std_ms": 0.3022470406789678,
+    "fps": 857.1810531342115
+  },
+  "int8_benchmark": {
+    "mean_ms": 8.899504194988594,
+    "median_ms": 7.027729500009627,
+    "p95_ms": 13.182147950021772,
+    "min_ms": 6.802921999906175,
+    "max_ms": 13.445147000084035,
+    "std_ms": 2.559696638687999,
+    "fps": 112.36581028447749
+  },
+  "real_time_10hz_budget_ms": 100.0,
+  "fp32_budget_pass": true
+}

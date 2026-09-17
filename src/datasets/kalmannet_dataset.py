@@ -32,11 +32,13 @@ class KalmanNetDataset(Dataset):
         stride=25,          # 2.5 seconds step (50% overlap)
         dt=0.1,             # 10 Hz sampling rate
         session_names=None,
-        io_checkpoint_path=None
+        io_checkpoint_path=None,
+        device="cpu"
     ):
         self.seq_len = seq_len
         self.stride = stride
         self.dt = dt
+        self.device = torch.device(device)
 
         loader = IOVNBDLoader()
         if session_names is None:
@@ -50,16 +52,16 @@ class KalmanNetDataset(Dataset):
         if io_checkpoint_path and Path(io_checkpoint_path).exists():
             try:
                 from src.models.inertial_odometry import NeuralInertialOdometry
-                ckpt = torch.load(io_checkpoint_path, map_location="cpu", weights_only=False)
+                ckpt = torch.load(io_checkpoint_path, map_location=self.device, weights_only=False)
                 cfg = ckpt.get("config", {})
                 io_model = NeuralInertialOdometry(
                     input_dim=6,
                     tcn_channels=cfg.get("tcn_channels", [64, 128, 256]),
                     kernel_size=cfg.get("tcn_kernel_size", 3)
-                )
+                ).to(self.device)
                 io_model.load_state_dict(ckpt["model_state_dict"])
                 io_model.eval()
-                print(f"KalmanNetDataset: Loaded Phase 4 model from {io_checkpoint_path}")
+                print(f"KalmanNetDataset: Loaded Phase 4 model from {io_checkpoint_path} onto {self.device}")
             except Exception as e:
                 print(f"KalmanNetDataset: Could not load Phase 4 checkpoint ({e}). Using kinematic odometry generation.")
                 io_model = None
@@ -115,21 +117,31 @@ class KalmanNetDataset(Dataset):
                 a_nav = np.stack([a_east, a_north], axis=1).astype(np.float32)
 
                 # 3. Derive Odometry Velocity Measurements z_meas [v_east, v_north]
-                meas_v_fwd = np.copy(veh_spd)
+                # Remediated: 100% continuous genuine NIO predicted velocity across all timesteps (zero GT leakage)
                 if io_model is not None:
-                    try:
-                        imu_6d = np.hstack([acc_aligned, gyr_aligned]).astype(np.float32)
-                        with torch.no_grad():
-                            for w_start in range(0, n_samples - 100 + 1, 20):
-                                w_end = w_start + 100
-                                w_x = torch.from_numpy(imu_6d[w_start:w_end]).unsqueeze(0)
-                                _, pred_v, _ = io_model(w_x)
-                                meas_v_fwd[w_end - 1] = pred_v[0, 0].item()
-                    except Exception as err:
-                        pass
+                    imu_6d = np.hstack([acc_aligned, gyr_aligned]).astype(np.float32)
+                    meas_v_fwd = np.zeros(n_samples, dtype=np.float32)
+                    batch_w, batch_idx = [], []
+                    with torch.no_grad():
+                        for i in range(n_samples):
+                            if i < 100:
+                                pad_len = 100 - (i + 1)
+                                pad = np.repeat(imu_6d[0:1], pad_len, axis=0)
+                                w = np.vstack([pad, imu_6d[:i+1]])
+                            else:
+                                w = imu_6d[i - 100 + 1 : i + 1]
+                            batch_w.append(w)
+                            batch_idx.append(i)
+                            if len(batch_w) >= 256 or i == n_samples - 1:
+                                bw_t = torch.tensor(np.array(batch_w), dtype=torch.float32, device=self.device)
+                                _, p_v, _ = io_model(bw_t)
+                                p_v_np = p_v[:, 0].detach().cpu().numpy()
+                                for b_i, t_i in enumerate(batch_idx):
+                                    meas_v_fwd[t_i] = max(0.0, float(p_v_np[b_i]))
+                                batch_w, batch_idx = [], []
                 else:
                     rng = np.random.RandomState(42 + len(self.sessions))
-                    noise = rng.normal(0.0, 0.4, size=n_samples).astype(np.float32)
+                    noise = rng.normal(0.0, 2.0, size=n_samples).astype(np.float32)
                     meas_v_fwd = np.maximum(0.0, veh_spd + noise)
 
                 z_east = meas_v_fwd * c_h

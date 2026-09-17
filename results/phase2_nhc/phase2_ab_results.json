@@ -1,0 +1,162 @@
+[
+  {
+    "session": "S1",
+    "w_start": 3000,
+    "w_len": 300,
+    "duration_s": 30.0,
+    "config_A_no_nhc": {
+      "distance_m": 302.50698378984316,
+      "final_err_m": 803.1340454126569,
+      "rmse_m": 531.3912659900192,
+      "max_err_m": 803.1340454126569,
+      "drift_pct": 265.49272858130377,
+      "recovery_jump_m": 23.288518995635513,
+      "nhc_active_all": false,
+      "nhc_update_total": 0,
+      "nhc_inflated_total": 0,
+      "cornering_count": 0
+    },
+    "config_B_with_nhc": {
+      "distance_m": 302.50698378984316,
+      "final_err_m": 557.557459756702,
+      "rmse_m": 401.8680211195207,
+      "max_err_m": 581.7383610366804,
+      "drift_pct": 184.31226042174512,
+      "recovery_jump_m": 15.64627516823225,
+      "nhc_active_all": true,
+      "nhc_update_total": 350,
+      "nhc_inflated_total": 0,
+      "cornering_count": 0
+    },
+    "drift_reduction_factor": 1.4404507219096587,
+    "rmse_reduction_pct": 24.374364646206146
+  },
+  {
+    "session": "S1",
+    "w_start": 3000,
+    "w_len": 100,
+    "duration_s": 10.0,
+    "config_A_no_nhc": {
+      "distance_m": 62.57927944168926,
+      "final_err_m": 307.8461209566782,
+      "rmse_m": 278.0848617082258,
+      "max_err_m": 307.8461209566782,
+      "drift_pct": 491.9297948189482,
+      "recovery_jump_m": 12.03121900081834,
+      "nhc_active_all": false,
+      "nhc_update_total": 0,
+      "nhc_inflated_total": 0,
+      "cornering_count": 0
+    },
+    "config_B_with_nhc": {
+      "distance_m": 62.57927944168926,
+      "final_err_m": 292.90285487991787,
+      "rmse_m": 261.51206474331826,
+      "max_err_m": 292.9688036494687,
+      "drift_pct": 468.050858835538,
+      "recovery_jump_m": 10.086541273620412,
+      "nhc_active_all": true,
+      "nhc_update_total": 150,
+      "nhc_inflated_total": 0,
+      "cornering_count": 0
+    },
+    "drift_reduction_factor": 1.0510178232400182,
+    "rmse_reduction_pct": 5.959618536263997
+  },
+  {
+    "session": "S1",
+    "w_start": 3000,
+    "w_len": 600,
+    "duration_s": 60.0,
+    "config_A_no_nhc": {
+      "distance_m": 834.0874138706994,
+      "final_err_m": 1885.845793878121,
+      "rmse_m": 1039.3066237261953,
+      "max_err_m": 1885.845793878121,
+      "drift_pct": 226.09690093830687,
+      "recovery_jump_m": 68.06259171533634,
+      "nhc_active_all": false,
+      "nhc_update_total": 0,
+      "nhc_inflated_total": 0,
+      "cornering_count": 0
+    },
+    "config_B_with_nhc": {
+      "distance_m": 834.0874138706994,
+      "final_err_m": 1189.0558897949832,
+      "rmse_m": 705.4940944619889,
+      "max_err_m": 1189.0558897949832,
+      "drift_pct": 142.55770678483242,
+      "recovery_jump_m": 0.01707776259218008,
+      "nhc_active_all": true,
+      "nhc_update_total": 650,
+      "nhc_inflated_total": 7,
+      "cornering_count": 7
+    },
+    "drift_reduction_factor": 1.586002651400413,
+    "rmse_reduction_pct": 32.11877242419549
+  },
+  {
+    "session": "S2",
+    "w_start": 1500,
+    "w_len": 300,
+    "duration_s": 30.0,
+    "config_A_no_nhc": {
+      "distance_m": 9.185343094355273,
+      "final_err_m": 24.51256378551692,
+      "rmse_m": 22.08782664821598,
+      "max_err_m": 43.19984987336365,
+      "drift_pct": 266.86606622871585,
+      "recovery_jump_m": 49.792465195987376,
+      "nhc_active_all": false,
+      "nhc_update_total": 0,
+      "nhc_inflated_total": 0,
+      "cornering_count": 0
+    },
+    "config_B_with_nhc": {
+      "distance_m": 9.185343094355273,
+      "final_err_m": 629.1974000158808,
+      "rmse_m": 140.22220081658818,
+      "max_err_m": 659.9600350887758,
+      "drift_pct": 6850.015220471682,
+      "recovery_jump_m": 68.80163135894225,
+      "nhc_active_all": true,
+      "nhc_update_total": 318,
+      "nhc_inflated_total": 48,
+      "cornering_count": 48
+    },
+    "drift_reduction_factor": 0.03895846325000426,
+    "rmse_reduction_pct": -534.8392852309615
+  },
+  {
+    "session": "S3b",
+    "w_start": 1519,
+    "w_len": 50,
+    "duration_s": 5.0,
+    "config_A_no_nhc": {
+      "distance_m": 0.0,
+      "final_err_m": 55.03746934158514,
+      "rmse_m": 34.23265939299822,
+      "max_err_m": 55.03746934158514,
+      "drift_pct": 5503746.934158513,
+      "recovery_jump_m": 41.97061412023666,
+      "nhc_active_all": false,
+      "nhc_update_total": 0,
+      "nhc_inflated_total": 0,
+      "cornering_count": 0
+    },
+    "config_B_with_nhc": {
+      "distance_m": 0.0,
+      "final_err_m": 53.829465761580856,
+      "rmse_m": 33.45459847696757,
+      "max_err_m": 53.829465761580856,
+      "drift_pct": 5382946.576158086,
+      "recovery_jump_m": 41.458190062123236,
+      "nhc_active_all": true,
+      "nhc_update_total": 50,
+      "nhc_inflated_total": 8,
+      "cornering_count": 8
+    },
+    "drift_reduction_factor": 1.022441307245268,
+    "rmse_reduction_pct": 2.2728614423388755
+  }
+]

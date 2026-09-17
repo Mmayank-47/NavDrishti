@@ -51,13 +51,29 @@ class FinalNavigationPipeline:
         knet_checkpoint_path: Optional[str] = None,
         map_gnn_checkpoint_path: Optional[str] = None,
         road_graph_path: Optional[str] = None,
+        enable_nhc: bool = True,
+        sigma_nhc: float = 0.20,
+        yaw_rate_threshold: float = 0.25,
+        enable_zupt: bool = True,
+        enable_bias_tracking: bool = True,
+        enable_kinematic_speed: bool = True,
+        enable_adaptive_nhc: bool = True,
+        accel_max_rate: float = 3.5,
         device: str = "cpu"
     ):
         self.device = torch.device(device) if HAS_TORCH else "cpu"
+        self.enable_nhc = enable_nhc
+        self.sigma_nhc = sigma_nhc
+        self.yaw_rate_threshold = yaw_rate_threshold
+        self.enable_zupt = enable_zupt
+        self.enable_bias_tracking = enable_bias_tracking
+        self.enable_kinematic_speed = enable_kinematic_speed
+        self.enable_adaptive_nhc = enable_adaptive_nhc
+        self.accel_max_rate = accel_max_rate
 
         # 1. Classical Physics & Fusion Engines
         self.aligner = PhoneVehicleAlignment()
-        self.nhc = VehicleKinematicConstraints(sigma_nhc_nominal=0.2, yaw_rate_threshold=0.25)
+        self.nhc = VehicleKinematicConstraints(sigma_nhc_nominal=sigma_nhc, yaw_rate_threshold=yaw_rate_threshold)
         self.eskf = InvariantESKF()
         self.gnss_engine = RobustGNSSFusionEngine(
             chi2_gate_2d=9.21,
@@ -107,6 +123,15 @@ class FinalNavigationPipeline:
         self.pos_cov = np.eye(2) * 5.0
         self.P_full = np.diag([5.0, 5.0, 1.0, 1.0])
 
+        # Physical Sensor Bias Tracking & Stationary Filters
+        self.gyro_bias_z = 0.0
+        self.acc_bias_fwd = 0.0
+        self.v_est_fwd = 0.0
+        self.is_stationary = False
+        self.stationary_step_count = 0
+        self.rolling_acc_mag = []
+        self.rolling_gyr_mag = []
+
         # KalmanNet Recurrent Hidden States
         self.x_knet_prev = None
         self.z_knet_prev = None
@@ -139,8 +164,16 @@ class FinalNavigationPipeline:
             initial_speed * np.cos(self.heading_rad),
             initial_speed * np.sin(self.heading_rad)
         ])
+        self.v_est_fwd = float(initial_speed)
         self.P_full = np.diag([5.0, 5.0, 1.0, 1.0])
         self.R_p2v = R_p2v if R_p2v is not None else np.eye(3)
+
+        self.gyro_bias_z = 0.0
+        self.acc_bias_fwd = 0.0
+        self.is_stationary = False
+        self.stationary_step_count = 0
+        self.rolling_acc_mag = []
+        self.rolling_gyr_mag = []
 
         x_init = np.array([0.0, 0.0, self.vel_enu[0], self.vel_enu[1]], dtype=np.float32)
         if HAS_TORCH:
@@ -152,6 +185,10 @@ class FinalNavigationPipeline:
         self.h_knet = None
         self.step_count = 0
         self.is_initialized = True
+        self.nhc_active = False
+        self.nhc_update_count = 0
+        self.nhc_rejected_or_inflated_count = 0
+        self.cornering_state = "STRAIGHT"
 
     def step(
         self,
@@ -179,13 +216,44 @@ class FinalNavigationPipeline:
         acc_v = self.R_p2v @ np.asarray(accel_raw[:3], dtype=np.float64)
         gyr_v = self.R_p2v @ np.asarray(gyro_raw[:3], dtype=np.float64)
 
-        # Update Heading from Yaw Rate: \dot{\theta} = \omega_z
-        self.heading_rad = (self.heading_rad + gyr_v[2] * dt + np.pi) % (2.0 * np.pi) - np.pi
+        # 1b. Real-Time Stationary (ZUPT) Detection & Bias Tracking
+        acc_mag = float(np.linalg.norm(acc_v))
+        gyr_mag = float(np.linalg.norm(gyr_v))
+        self.rolling_acc_mag.append(acc_mag)
+        self.rolling_gyr_mag.append(gyr_mag)
+        if len(self.rolling_acc_mag) > 10:
+            self.rolling_acc_mag.pop(0)
+            self.rolling_gyr_mag.pop(0)
+
+        if len(self.rolling_acc_mag) >= 5:
+            var_a = float(np.var(self.rolling_acc_mag))
+            var_g = float(np.var(self.rolling_gyr_mag))
+            mean_a = float(np.mean(self.rolling_acc_mag))
+            if abs(mean_a - 9.80665) < 0.6 and var_a < 0.08 and var_g < 0.005:
+                self.is_stationary = True
+                self.stationary_step_count += 1
+                if self.enable_bias_tracking:
+                    alpha_b = 0.05
+                    self.gyro_bias_z = (1.0 - alpha_b) * self.gyro_bias_z + alpha_b * gyr_v[2]
+                    self.acc_bias_fwd = (1.0 - alpha_b) * self.acc_bias_fwd + alpha_b * acc_v[0]
+            else:
+                self.is_stationary = False
+                self.stationary_step_count = 0
+        else:
+            self.is_stationary = False
+
+        # Apply Bias Compensation
+        omega_z = float(gyr_v[2] - self.gyro_bias_z if self.enable_bias_tracking else gyr_v[2])
+        a_fwd = float(acc_v[0] - self.acc_bias_fwd if self.enable_bias_tracking else acc_v[0])
+        a_lat = float(acc_v[1])
+
+        # Update Heading from Bias-Compensated Yaw Rate: \dot{\theta} = \omega_z
+        self.heading_rad = (self.heading_rad + omega_z * dt + np.pi) % (2.0 * np.pi) - np.pi
         c_h, s_h = np.cos(self.heading_rad), np.sin(self.heading_rad)
 
         # Navigation-frame linear acceleration (2D horizontal)
-        a_east = float(acc_v[0] * c_h - acc_v[1] * s_h)
-        a_north = float(acc_v[0] * s_h + acc_v[1] * c_h)
+        a_east = float(a_fwd * c_h - a_lat * s_h)
+        a_north = float(a_fwd * s_h + a_lat * c_h)
         a_nav = np.array([a_east, a_north])
 
         # 2. Kinematic State Propagation (F and B matrices)
@@ -203,9 +271,13 @@ class FinalNavigationPipeline:
         ])
         Q_m = np.diag([0.05, 0.05, 0.2, 0.2])
 
-        x_prior = np.array([self.pos_enu[0], self.pos_enu[1], self.vel_enu[0], self.vel_enu[1]])
-        x_prior = F_m @ x_prior + B_m @ a_nav
-        P_prior = F_m @ self.P_full @ F_m.T + Q_m
+        if self.enable_zupt and self.is_stationary:
+            x_prior = np.array([self.pos_enu[0], self.pos_enu[1], 0.0, 0.0])
+            P_prior = self.P_full.copy()
+        else:
+            x_prior = np.array([self.pos_enu[0], self.pos_enu[1], self.vel_enu[0], self.vel_enu[1]])
+            x_prior = F_m @ x_prior + B_m @ a_nav
+            P_prior = F_m @ self.P_full @ F_m.T + Q_m
 
         # 3. Robust GNSS Observation Processing
         p_gnss_enu = None
@@ -238,39 +310,109 @@ class FinalNavigationPipeline:
 
             # Complementary course-over-ground alignment to keep heading calibrated prior to blackout
             spd_post = float(np.linalg.norm(x_post[2:4]))
+            self.v_est_fwd = spd_post
             if spd_post > 2.5:
                 v_heading = float(np.arctan2(x_post[3], x_post[2]))
                 d_h = (v_heading - self.heading_rad + np.pi) % (2.0 * np.pi) - np.pi
                 self.heading_rad += 0.08 * d_h
+                if spd_post > 4.0 and abs(gyr_v[2]) < 0.04 and self.enable_bias_tracking:
+                    self.gyro_bias_z += 0.005 * (gyr_v[2] - 0.0)
+            self.nhc_active = False
         else:
             # GNSS Outage / Outlier: Dead Reckoning with KalmanNet & NHC
             x_post = x_prior.copy()
             P_post = P_prior.copy()
 
-            # Neural Odometry / Forward Speed Observation
-            v_forward = speed_ref if speed_ref is not None else float(np.linalg.norm(x_prior[2:4]))
-            z_odo = np.array([v_forward * c_h, v_forward * s_h], dtype=np.float32)
-
-            if self.knet_model is not None:
-                H_vel_t = torch.tensor([[0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]], dtype=torch.float32, device=self.device)
-                with torch.no_grad():
-                    z_odo_t = torch.tensor(z_odo, dtype=torch.float32, device=self.device).unsqueeze(0)
-                    x_prior_t = torch.tensor(x_post, dtype=torch.float32, device=self.device).unsqueeze(0)
-                    x_knet_post, _, self.h_knet = self.knet_model.step(
-                        x_prior=x_prior_t,
-                        z_meas=z_odo_t,
-                        H_matrix=H_vel_t,
-                        x_prev=self.x_knet_prev,
-                        z_prev=self.z_knet_prev,
-                        h_prev=self.h_knet
-                    )
-                    x_post = x_knet_post[0].cpu().numpy()
-                    self.x_knet_prev = x_knet_post
-                    self.z_knet_prev = z_odo_t
+            if self.enable_zupt and self.is_stationary:
+                x_post[2] = 0.0
+                x_post[3] = 0.0
+                self.v_est_fwd = 0.0
+                P_post = np.diag([P_prior[0, 0], P_prior[1, 1], 0.01, 0.01])
+                self.nhc_active = True
+                self.cornering_state = "STATIONARY"
             else:
-                # Direct velocity kinematic damping
-                x_post[2] = z_odo[0]
-                x_post[3] = z_odo[1]
+                # Kinematic Speed Observer: fuse NIO speed with longitudinal acceleration
+                raw_speed = speed_ref if speed_ref is not None else float(np.linalg.norm(x_prior[2:4]))
+                if self.enable_kinematic_speed:
+                    v_kinematic = max(0.0, self.v_est_fwd + a_fwd * dt)
+                    alpha_v = 0.08
+                    v_fused = (1.0 - alpha_v) * v_kinematic + alpha_v * raw_speed
+                    delta_v = v_fused - self.v_est_fwd
+                    delta_max = self.accel_max_rate * dt
+                    delta_v = float(np.clip(delta_v, -delta_max, delta_max))
+                    self.v_est_fwd = max(0.0, self.v_est_fwd + delta_v)
+                    v_forward = self.v_est_fwd
+                else:
+                    v_forward = raw_speed
+                    self.v_est_fwd = v_forward
+
+                z_odo = np.array([v_forward * c_h, v_forward * s_h], dtype=np.float32)
+
+                if self.knet_model is not None:
+                    H_vel_t = torch.tensor([[0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]], dtype=torch.float32, device=self.device)
+                    with torch.no_grad():
+                        z_odo_t = torch.tensor(z_odo, dtype=torch.float32, device=self.device).unsqueeze(0)
+                        x_prior_t = torch.tensor(x_post, dtype=torch.float32, device=self.device).unsqueeze(0)
+                        x_knet_post, _, self.h_knet = self.knet_model.step(
+                            x_prior=x_prior_t,
+                            z_meas=z_odo_t,
+                            H_matrix=H_vel_t,
+                            x_prev=self.x_knet_prev,
+                            z_prev=self.z_knet_prev,
+                            h_prev=self.h_knet
+                        )
+                        x_post = x_knet_post[0].cpu().numpy()
+                        self.x_knet_prev = x_knet_post
+                        self.z_knet_prev = z_odo_t
+                else:
+                    x_post[2] = z_odo[0]
+                    x_post[3] = z_odo[1]
+
+                # 3b. Non-Holonomic Constraint (NHC) Update
+                # Under standard planar vehicle kinematics, lateral velocity v_lat ≈ 0
+                if self.enable_nhc:
+                    v_east, v_north = x_post[2], x_post[3]
+                    v_lat = -s_h * v_east + c_h * v_north
+
+                    yaw_rate = abs(float(omega_z))
+                    centripetal_acc = abs(v_forward * omega_z)
+                    cov_scale = 1.0
+
+                    if self.enable_adaptive_nhc:
+                        if yaw_rate > self.yaw_rate_threshold or centripetal_acc > 1.2:
+                            self.cornering_state = "CORNERING"
+                            excess_y = max(0.0, (yaw_rate - self.yaw_rate_threshold) / self.yaw_rate_threshold)
+                            excess_a = max(0.0, (centripetal_acc - 1.2) / 1.2)
+                            cov_scale = min(1.0 + (excess_y ** 2) * 5.0 + (excess_a ** 2) * 4.0, self.nhc.max_covariance_scale)
+                            self.nhc_rejected_or_inflated_count += 1
+                        else:
+                            self.cornering_state = "STRAIGHT"
+                    else:
+                        if yaw_rate > self.yaw_rate_threshold:
+                            self.cornering_state = "CORNERING"
+                            excess = (yaw_rate - self.yaw_rate_threshold) / self.yaw_rate_threshold
+                            cov_scale = min(1.0 + (excess ** 2) * 5.0, self.nhc.max_covariance_scale)
+                            self.nhc_rejected_or_inflated_count += 1
+                        else:
+                            self.cornering_state = "STRAIGHT"
+
+                    R_nhc = float((self.sigma_nhc * cov_scale) ** 2)
+                    H_nhc = np.array([0.0, 0.0, -s_h, c_h], dtype=np.float64)
+
+                    # Innovation: target (0.0) - predicted (v_lat)
+                    y_innov = 0.0 - v_lat
+
+                    S_nhc = float(H_nhc @ P_post @ H_nhc.T + R_nhc)
+                    K_nhc = (P_post @ H_nhc.T) / S_nhc
+
+                    x_post = x_post + K_nhc * y_innov
+                    P_post = (np.eye(4) - np.outer(K_nhc, H_nhc)) @ P_post
+
+                    self.nhc_active = True
+                    self.nhc_update_count += 1
+                else:
+                    self.nhc_active = False
+                    self.cornering_state = "DISABLED"
 
         self.pos_enu = x_post[0:2]
         self.vel_enu = x_post[2:4]
@@ -350,5 +492,9 @@ class FinalNavigationPipeline:
             'pos_uncertainty_m': float(np.sqrt(np.trace(self.pos_cov))),
             'gnss_rejected': gnss_info.get('rejected', False),
             'matched_edge_id': self.matched_edge_id,
-            'map_confidence': self.map_confidence
+            'map_confidence': self.map_confidence,
+            'nhc_active': self.nhc_active,
+            'nhc_update_count': self.nhc_update_count,
+            'nhc_rejected_or_inflated_count': self.nhc_rejected_or_inflated_count,
+            'cornering_state': self.cornering_state
         }
