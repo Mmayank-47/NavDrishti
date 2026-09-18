@@ -140,6 +140,14 @@ class FinalNavigationPipeline:
         # Phone Alignment Rotation
         self.R_p2v = np.eye(3)
 
+        # Dynamic 3D Gravity Compensator
+        from src.preprocessing.gravity_compensator import GravityCompensator
+        self.gravity_compensator = GravityCompensator(
+            sampling_rate_hz=10.0,
+            tilt_fusion_cutoff_hz=0.01,
+            enable_gyro_debias=True
+        )
+
         # History Buffers
         self.matched_edge_id = None
         self.map_confidence = 0.0
@@ -167,6 +175,7 @@ class FinalNavigationPipeline:
         self.v_est_fwd = float(initial_speed)
         self.P_full = np.diag([5.0, 5.0, 1.0, 1.0])
         self.R_p2v = R_p2v if R_p2v is not None else np.eye(3)
+        self.gravity_compensator.reset()
 
         self.gyro_bias_z = 0.0
         self.acc_bias_fwd = 0.0
@@ -212,14 +221,21 @@ class FinalNavigationPipeline:
 
         self.step_count += 1
 
-        # 1. Transform IMU from Phone Body Frame to Vehicle Reference Frame
-        acc_v = self.R_p2v @ np.asarray(accel_raw[:3], dtype=np.float64)
+        # 1. Dynamic 3D Gravity Compensation (extract true kinematic acceleration)
+        accel_clean, g_phone, q_orient, R_v2w = self.gravity_compensator.step(
+            accel_raw=accel_raw,
+            gyro_raw=gyro_raw,
+            dt=dt
+        )
+
+        # Transform clean kinematic acceleration and angular velocity into vehicle reference frame
+        acc_v = self.R_p2v @ accel_clean
         gyr_v = self.R_p2v @ np.asarray(gyro_raw[:3], dtype=np.float64)
 
         # 1b. Real-Time Stationary (ZUPT) Detection & Bias Tracking
-        acc_mag = float(np.linalg.norm(acc_v))
+        acc_raw_mag = float(np.linalg.norm(accel_raw[:3]))
         gyr_mag = float(np.linalg.norm(gyr_v))
-        self.rolling_acc_mag.append(acc_mag)
+        self.rolling_acc_mag.append(acc_raw_mag)
         self.rolling_gyr_mag.append(gyr_mag)
         if len(self.rolling_acc_mag) > 10:
             self.rolling_acc_mag.pop(0)
@@ -488,6 +504,8 @@ class FinalNavigationPipeline:
             'north_m': float(self.pos_enu[1]),
             'speed_mps': float(np.linalg.norm(self.vel_enu)),
             'heading_deg': float(np.degrees(self.heading_rad)),
+            'accel_clean': accel_clean,
+            'g_phone': g_phone,
             'mode': self.gnss_engine.mode.value,
             'pos_uncertainty_m': float(np.sqrt(np.trace(self.pos_cov))),
             'gnss_rejected': gnss_info.get('rejected', False),

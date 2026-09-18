@@ -47,6 +47,15 @@ class IMUPreprocessor:
             self.filter_accel_coeffs = (b_a, a_a)
             self.filter_gyro_coeffs = (b_g, a_g)
 
+        # Dynamic Gravity Compensator
+        from src.preprocessing.gravity_compensator import GravityCompensator
+        self.gravity_compensator = GravityCompensator(
+            sampling_rate_hz=self.fs,
+            g_val=STANDARD_GRAVITY,
+            tilt_fusion_cutoff_hz=0.01,
+            enable_gyro_debias=True
+        )
+
     def filter_vibrations(self, signal):
         """
         Apply zero-phase forward-backward Butterworth low-pass filter
@@ -76,18 +85,25 @@ class IMUPreprocessor:
             accel_out = accel_out * scale
         return accel_out
 
-    def remove_gravity(self, accel_raw, gravity_measured=None, orientation_quats=None):
+    def remove_gravity(self, accel_raw, gyro_raw=None, gravity_measured=None, orientation_quats=None):
         """
         Extract linear body acceleration by removing gravity vector.
         
-        Three modes:
+        Four modes:
           1. Direct subtraction if measured gravity vector is provided (e.g. IO-VNBD S-* smartphone data).
-          2. Orientation projection: rotate [0, 0, -g] from navigation into body frame using quaternions.
-          3. Low-pass estimation: estimate gravity as low-frequency acceleration component.
+          2. Dynamic 3D rotation state integration with GravityCompensator (when gyro_raw is provided).
+          3. Orientation projection: rotate [0, 0, g] into body frame using pre-computed quaternions.
+          4. Low-pass estimation: estimate gravity as low-frequency acceleration component.
         """
         if gravity_measured is not None:
             # IO-VNBD provides dedicated GRAVITY X, Y, Z channels
             return accel_raw - gravity_measured
+
+        if gyro_raw is not None and len(gyro_raw) == len(accel_raw):
+            # Dynamic 3D quaternion gyro integration with 0.01 Hz complementary tilt fusion
+            self.gravity_compensator.reset()
+            res = self.gravity_compensator.batch_process(accel_raw, gyro_raw, dt=1.0 / self.fs)
+            return res['accel_clean']
 
         if orientation_quats is not None:
             # Gravity in ENU is [0, 0, -g]. Gravity in body is R_n_to_b @ g_enu
@@ -151,6 +167,7 @@ class IMUPreprocessor:
 
         acc_linear = self.remove_gravity(
             acc_filt,
+            gyro_raw=gyr_filt,
             gravity_measured=gravity_raw,
             orientation_quats=quats
         )
