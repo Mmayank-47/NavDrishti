@@ -6,6 +6,8 @@ from experiments.causal_baseline.adapter import CanonicalSession, TimestampPolic
 from experiments.causal_baseline.replay import initialize_before, replay_outage
 from experiments.causal_baseline.phone_csv import load_phone_csv
 from src.preprocessing.frame_transform import geodetic_to_enu
+from experiments.causal_baseline.acquisition import resolve
+from experiments.causal_baseline.eligibility import report
 
 def s(t, ref=None, gyro=None, policy=None):
     n=len(t); return CanonicalSession(np.array(t,float),np.zeros((n,3)),np.zeros((n,3)) if gyro is None else np.array(gyro,float),None if ref is None else np.array(ref,float),policy=policy or TimestampPolicy())
@@ -54,3 +56,13 @@ def test_documented_iovnbd_header_maps_roll_pitch_yaw_and_wgs84_enu(tmp_path):
     p=tmp_path/'S-real-header.csv'; p.write_text(','.join(h)+'\n12,77,10,0,0,0,0,1000,0,1,2,3,0,0,0,30,20,10\n12.0001,77.0001,10,0,0,0,0,1100,0,1,2,3,0,0,0,30,20,10\n',encoding='utf-8')
     x=load_phone_csv(p); expected=geodetic_to_enu(np.array([12.,12.0001]),np.array([77.,77.0001]),np.array([10.,10.]),12.,77.,10.)[:,:2]
     assert np.allclose(x.reference_enu_m,expected) and np.allclose(x.gyro_phone_rad_s[0],[10,20,30]) and x.column_mapping_path=='named_iovnbd_or_positional'
+
+def test_acquisition_rejects_pointer_and_allows_explicit_unverified_local(tmp_path):
+    (tmp_path/'S-X.csv').write_text('version https://git-lfs.github.com/spec/v1\n')
+    with pytest.raises(FileNotFoundError): resolve('X',local_dir=tmp_path)
+    (tmp_path/'S-X.csv').write_text('a,b\n1,2\n')
+    assert resolve('X',local_dir=tmp_path,allow_unverified=True)['verified'] is False
+
+def test_eligibility_held_coordinates_is_not_evaluable():
+    t=np.arange(0,4,.1); q=report(s(t,np.zeros((len(t),2))),1.,3.,1.,.5)
+    assert q['status']=='NOT_EVALUABLE' and q['counts']
