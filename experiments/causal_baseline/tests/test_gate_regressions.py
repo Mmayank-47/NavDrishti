@@ -44,7 +44,7 @@ def write_phone(path, n=30, bad=False):
 
 def test_real_cli_phone_csv_success_and_runtime_diagnostics(tmp_path):
     phone=tmp_path/'S-tiny.csv'; write_phone(phone)
-    cfg=tmp_path/'cfg.json'; cfg.write_text(json.dumps({'phone_csv':str(phone),'session':'synthetic-training-fixture','t0_s':1.5,'t1_s':2.,'mode':'constant_velocity','timestamp_gap_s':.5}))
+    cfg=tmp_path/'cfg.json'; cfg.write_text(json.dumps({'phone_csv':str(phone),'fixture_mode':True,'session':'synthetic-training-fixture','t0_s':1.5,'t1_s':2.,'mode':'constant_velocity','timestamp_gap_s':.5}))
     out=tmp_path/'out'; p=subprocess.run([sys.executable,'-m','experiments.causal_baseline.run','--config',str(cfg),'--output',str(out)],text=True,capture_output=True)
     assert p.returncode==0 and (out/'trajectory.csv').exists()
     bad=tmp_path/'missing.json'; bad.write_text(json.dumps({'phone_csv':str(tmp_path/'none.csv')}))
@@ -66,3 +66,9 @@ def test_acquisition_rejects_pointer_and_allows_explicit_unverified_local(tmp_pa
 def test_eligibility_held_coordinates_is_not_evaluable():
     t=np.arange(0,4,.1); q=report(s(t,np.zeros((len(t),2))),1.,3.,1.,.5)
     assert q['status']=='NOT_EVALUABLE' and q['counts']
+
+def test_eligibility_requires_finite_exact_endpoint_metric():
+    t=np.arange(0,3,.1); ref=np.c_[t,np.zeros_like(t)]
+    # t1=2.05 has no exact reference sample; replay retains a prediction but is NOT_EVALUABLE.
+    q=report(s(t,ref),1.5,2.05,.55,1.,mode='constant_velocity')
+    assert q['status']=='NOT_EVALUABLE' and q['windows'][0]['eligible'] is False and q['windows'][0]['replay_status']=='NOT_EVALUABLE'
