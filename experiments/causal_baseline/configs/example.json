@@ -1,9 +1,11 @@
 {
-  "dataset_root": "data/IO-VNBD/Synchronised V abd S datasets/Categorised IOVNB Dataset",
-  "session": "M",
+  "phone_csv": "/content/S-training-session.csv",
+  "session": "documented-training-session",
   "t0_s": 10.0,
   "t1_s": 15.0,
   "timestamp_gap_s": 2.0,
   "mode": "constant_velocity",
-  "phone_to_vehicle_rotation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+  "history_min_span_s": 1.0,
+  "history_max_span_s": 5.0,
+  "max_extrapolation_s": 2.0
 }
