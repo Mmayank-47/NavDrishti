@@ -4,6 +4,8 @@ import numpy as np
 import pytest
 from experiments.causal_baseline.adapter import CanonicalSession, TimestampPolicy
 from experiments.causal_baseline.replay import initialize_before, replay_outage
+from experiments.causal_baseline.phone_csv import load_phone_csv
+from src.preprocessing.frame_transform import geodetic_to_enu
 
 def s(t, ref=None, gyro=None, policy=None):
     n=len(t); return CanonicalSession(np.array(t,float),np.zeros((n,3)),np.zeros((n,3)) if gyro is None else np.array(gyro,float),None if ref is None else np.array(ref,float),policy=policy or TimestampPolicy())
@@ -46,3 +48,9 @@ def test_real_cli_phone_csv_success_and_runtime_diagnostics(tmp_path):
     bad=tmp_path/'missing.json'; bad.write_text(json.dumps({'phone_csv':str(tmp_path/'none.csv')}))
     q=subprocess.run([sys.executable,'-m','experiments.causal_baseline.run','--config',str(bad),'--output',str(out)],text=True,capture_output=True)
     assert q.returncode!=0 and json.loads((out/'status.json').read_text())['status']=='RUNTIME_ERROR' and (out/'diagnostic.log').exists() and not (out/'trajectory.csv').exists()
+
+def test_documented_iovnbd_header_maps_roll_pitch_yaw_and_wgs84_enu(tmp_path):
+    h=['LATITUDE','LONGITUDE','ALTITUDE','speed','accuracy','heading','x','TIMESTAMP (ms)','x','ACCELEROMETER X (m/s²)','ACCELEROMETER Y (m/s²)','ACCELEROMETER Z (m/s²)','x','x','x','GYROSCOPE Yaw (rad/s)','GYROSCOPE Pitch (rad/s)','GYROSCOPE Roll (rad/s)']
+    p=tmp_path/'S-real-header.csv'; p.write_text(','.join(h)+'\n12,77,10,0,0,0,0,1000,0,1,2,3,0,0,0,30,20,10\n12.0001,77.0001,10,0,0,0,0,1100,0,1,2,3,0,0,0,30,20,10\n',encoding='utf-8')
+    x=load_phone_csv(p); expected=geodetic_to_enu(np.array([12.,12.0001]),np.array([77.,77.0001]),np.array([10.,10.]),12.,77.,10.)[:,:2]
+    assert np.allclose(x.reference_enu_m,expected) and np.allclose(x.gyro_phone_rad_s[0],[10,20,30]) and x.column_mapping_path=='named_iovnbd_or_positional'
