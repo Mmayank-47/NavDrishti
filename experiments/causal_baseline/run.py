@@ -15,14 +15,13 @@ def main():
     cfg={}; inputs=[]; loaded=False
     try:
         cfg=json.loads(Path(a.config).read_text()); inputs=[Path(a.config)]
+        if cfg.get('input_dir') and cfg.get('phone_csv'): raise ValueError('input_dir and phone_csv are mutually exclusive')
         if cfg.get('input_dir'):
             rec=resolve(cfg['session'],local_dir=cfg['input_dir'],drive_dir=cfg.get('drive_dir'),archive_dir=cfg.get('archive_dir'),allow_unverified=bool(cfg.get('fixture_mode')))
             phone=Path(rec['path']); (out/'acquisition.json').write_text(json.dumps(rec,indent=2)); (out/'audit.json').write_text(json.dumps(audit(phone),indent=2))
         elif 'phone_csv' in cfg:
-            phone=Path(cfg['phone_csv']); rec={'path':str(phone),'source':'compatibility_direct','verified':False,'fixture_mode':bool(cfg.get('fixture_mode'))}
-            (out/'acquisition.json').write_text(json.dumps(rec,indent=2));
-            if cfg.get('fixture_mode'): (out/'audit.json').write_text(json.dumps({'status':'fixture_si_layout; raw_IO-VNBD_audit_not_applicable'},indent=2))
-            else: (out/'audit.json').write_text(json.dumps(audit(phone),indent=2))
+            rec=resolve(cfg['session'],explicit_file=cfg['phone_csv'],allow_unverified=bool(cfg.get('fixture_mode')))
+            phone=Path(rec['path']); (out/'acquisition.json').write_text(json.dumps(rec,indent=2)); (out/'audit.json').write_text(json.dumps(audit(phone),indent=2))
         else: raise ValueError('phone_csv or input_dir is required')
         inputs.append(phone); s=load_phone_csv(phone,cfg.get('timestamp_gap_s',2.)); loaded=True
         elig=report(s,float(cfg['t0_s']),float(cfg['t1_s']),float(cfg['t1_s'])-float(cfg['t0_s']),1e99,mode=cfg['mode'],phone_to_vehicle=np.asarray(cfg['phone_to_vehicle_rotation']) if cfg.get('phone_to_vehicle_rotation') is not None else None,history_min_span_s=cfg.get('history_min_span_s',1.),history_max_span_s=cfg.get('history_max_span_s',5.),max_extrapolation_s=cfg.get('max_extrapolation_s',2.),max_gyro_age_s=cfg.get('max_gyro_age_s'))

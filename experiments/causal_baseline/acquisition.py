@@ -9,12 +9,15 @@ def _why(p):
     if b.startswith(b'version https://git-lfs.github.com'): return 'lfs_pointer'
     if b.lstrip().lower().startswith((b'<html',b'<!doctype html')): return 'html_error'
     return None
-def resolve(session, *, local_dir=None, drive_dir=None, archive_dir=None, allow_unverified=False):
+def resolve(session, *, local_dir=None, drive_dir=None, archive_dir=None, explicit_file=None, allow_unverified=False):
     expected=json.loads((ROOT/'expected_hashes.json').read_text())['files'].get(f'S-{session}.csv')
-    for source,d in (('local',local_dir),('drive',drive_dir),('archive',archive_dir)):
+    sources=(('explicit_file',Path(explicit_file).parent) if explicit_file else None,('local',local_dir),('drive',drive_dir),('archive',archive_dir))
+    for item in sources:
+        if item is None: continue
+        source,d=item
         if d:
-            p=Path(d)/f'S-{session}.csv'; reason=_why(p)
-            if reason: continue
+            p=Path(explicit_file) if explicit_file else Path(d)/f'S-{session}.csv'; reason=_why(p)
+            if reason: raise ValueError(reason) if explicit_file else FileNotFoundError(reason)
             size=p.stat().st_size; digest=hashlib.sha256(p.read_bytes()).hexdigest()
             verified=bool(expected and expected['size']==size and expected['sha256']==digest)
             if expected and not verified: raise ValueError('wrong_hash_or_truncated')
