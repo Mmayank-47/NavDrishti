@@ -95,6 +95,8 @@ class NavShieldState {
   final AlignmentStatus alignmentStatus;
   final double distanceTraveledKm;
   final double driftEstimatePercent;
+  final bool gnssOutlierRejected;
+  final bool isReacquiring;
   final DateTime timestamp;
 
   const NavShieldState({
@@ -115,6 +117,8 @@ class NavShieldState {
     required this.alignmentStatus,
     required this.distanceTraveledKm,
     required this.driftEstimatePercent,
+    this.gnssOutlierRejected = false,
+    this.isReacquiring = false,
     required this.timestamp,
   });
 
@@ -150,6 +154,8 @@ class NavShieldState {
       alignmentStatus: AlignmentStatus.calibrated,
       distanceTraveledKm: 0.0,
       driftEstimatePercent: 0.2,
+      gnssOutlierRejected: false,
+      isReacquiring: false,
       timestamp: DateTime.now(),
     );
   }
@@ -175,6 +181,8 @@ class NavShieldState {
       alignmentStatus: AlignmentStatus.fromString(json['alignment_status'] as String? ?? 'CALIBRATED'),
       distanceTraveledKm: (json['distance_traveled_km'] as num?)?.toDouble() ?? 0.0,
       driftEstimatePercent: (json['drift_estimate_percent'] as num?)?.toDouble() ?? 0.0,
+      gnssOutlierRejected: json['gnss_outlier_rejected'] as bool? ?? false,
+      isReacquiring: json['is_reacquiring'] as bool? ?? false,
       timestamp: json['timestamp'] != null
           ? DateTime.tryParse(json['timestamp'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -199,6 +207,8 @@ class NavShieldState {
     'alignment_status': alignmentStatus.value,
     'distance_traveled_km': distanceTraveledKm,
     'drift_estimate_percent': driftEstimatePercent,
+    'gnss_outlier_rejected': gnssOutlierRejected,
+    'is_reacquiring': isReacquiring,
     'timestamp': timestamp.toIso8601String(),
   };
 
@@ -220,6 +230,8 @@ class NavShieldState {
     AlignmentStatus? alignmentStatus,
     double? distanceTraveledKm,
     double? driftEstimatePercent,
+    bool? gnssOutlierRejected,
+    bool? isReacquiring,
     DateTime? timestamp,
   }) {
     return NavShieldState(
@@ -240,6 +252,8 @@ class NavShieldState {
       alignmentStatus: alignmentStatus ?? this.alignmentStatus,
       distanceTraveledKm: distanceTraveledKm ?? this.distanceTraveledKm,
       driftEstimatePercent: driftEstimatePercent ?? this.driftEstimatePercent,
+      gnssOutlierRejected: gnssOutlierRejected ?? this.gnssOutlierRejected,
+      isReacquiring: isReacquiring ?? this.isReacquiring,
       timestamp: timestamp ?? this.timestamp,
     );
   }

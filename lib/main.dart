@@ -7,8 +7,12 @@ import 'screens/splash_screen.dart';
 import 'services/hybrid_nav_shield_service.dart';
 import 'services/nav_shield_data_service.dart';
 import 'services/route_calculation_service.dart';
+import 'services/saved_places_service.dart';
 import 'services/settings_service.dart';
+import 'services/overlay_navigation_service.dart';
+import 'services/trip_notification_service.dart';
 import 'theme/app_theme.dart';
+import 'widgets/compact_floating_overlay_window.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +24,10 @@ void main() async {
   // Load user preferences
   final settingsService = SettingsService();
   await settingsService.loadSettings();
+
+  // Load editable saved places
+  final savedPlacesService = SavedPlacesService();
+  await savedPlacesService.load();
 
   // Initialize Mapbox Access Token if valid
   if (mapboxAccessToken.isNotEmpty &&
@@ -51,6 +59,9 @@ void main() async {
         ChangeNotifierProvider<SettingsService>.value(
           value: settingsService,
         ),
+        ChangeNotifierProvider<SavedPlacesService>.value(
+          value: savedPlacesService,
+        ),
         Provider<NavShieldDataService>.value(
           value: dataService,
         ),
@@ -60,8 +71,32 @@ void main() async {
   );
 }
 
-class NavShieldApp extends StatelessWidget {
+class NavShieldApp extends StatefulWidget {
   const NavShieldApp({super.key});
+
+  @override
+  State<NavShieldApp> createState() => _NavShieldAppState();
+}
+
+class _NavShieldAppState extends State<NavShieldApp> {
+  late final AppLifecycleListener _lifecycleListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycleListener = AppLifecycleListener(
+      onDetach: () {
+        OverlayNavigationService.instance.closeOverlay();
+        TripNotificationService.instance.cancelTripNotification();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycleListener.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,4 +113,16 @@ class NavShieldApp extends StatelessWidget {
       home: const SplashScreen(),
     );
   }
+}
+
+/// Dedicated entry point for the Android SYSTEM_ALERT_WINDOW floating overlay
+@pragma("vm:entry-point")
+void overlayMain() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: CompactFloatingOverlayWindow(),
+    ),
+  );
 }

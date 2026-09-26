@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import '../theme/app_theme.dart';
+import '../widgets/galaxy_background.dart';
+import '../widgets/liquid_glass_card.dart';
 
 /// Enum representing the individual guided sensor diagnostic checks.
 enum DiagnosticStep {
@@ -12,6 +14,7 @@ enum DiagnosticStep {
   tiltBackward,
   rotateYaw,
   shakeMotion,
+  rotatePhoneFlat,
   summary,
 }
 
@@ -42,19 +45,21 @@ class StepConfig {
 /// - 100% LOCAL: Directly accesses device physical sensors via sensors_plus.
 /// - Never touches the Python backend, WebSocket, or mock stream.
 /// - Step-by-step guided flow: Left tilt, Right tilt, Pitch down, Pitch up,
-///   Yaw rotation, and Dynamic tap/shake.
-/// - Live numeric readouts (2 decimal places) for Accelerometer and Gyroscope.
+///   Yaw rotation, Dynamic tap/shake, and Rotate Phone Flat (Compass check).
+/// - Live numeric readouts (2 decimal places) for Accelerometer, Gyroscope, and Magnetometer.
 /// - Animated visual threshold bar showing real-time deviation into pass zone.
 /// - Auto-advance on pass, with manual Next and Retry on timeout.
-/// - Comprehensive health summary report.
+/// - Comprehensive health summary report covering all 7 checks.
 class SensorDiagnosticsScreen extends StatefulWidget {
   final Stream<AccelerometerEvent>? customAccelerometerStream;
   final Stream<GyroscopeEvent>? customGyroscopeStream;
+  final Stream<MagnetometerEvent>? customMagnetometerStream;
 
   const SensorDiagnosticsScreen({
     super.key,
     this.customAccelerometerStream,
     this.customGyroscopeStream,
+    this.customMagnetometerStream,
   });
 
   @override
@@ -66,6 +71,7 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
   // Sensor Subscriptions
   StreamSubscription<AccelerometerEvent>? _accelSubscription;
   StreamSubscription<GyroscopeEvent>? _gyroSubscription;
+  StreamSubscription<MagnetometerEvent>? _magSubscription;
 
   // Real-time raw telemetry
   double _accelX = 0.0;
@@ -74,7 +80,14 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
   double _gyroX = 0.0;
   double _gyroY = 0.0;
   double _gyroZ = 0.0;
+  double _magX = 0.0;
+  double _magY = 0.0;
+  double _magZ = 0.0;
+  double _compassHeading = 0.0;
+  double _lastHeading = -1.0;
+  double _accumulatedHeadingDelta = 0.0;
   bool _hasReceivedSensorData = false;
+  bool _magnetometerAvailable = true;
 
   // Step state
   int _currentStepIndex = 0;
@@ -92,6 +105,7 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
     DiagnosticStep.tiltBackward: false,
     DiagnosticStep.rotateYaw: false,
     DiagnosticStep.shakeMotion: false,
+    DiagnosticStep.rotatePhoneFlat: false,
   };
 
   static const List<StepConfig> _steps = [
@@ -149,6 +163,15 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
       expectedCriteria: '|a| > 12.8 or < 6.8 m/s²',
       icon: Icons.vibration_rounded,
     ),
+    StepConfig(
+      step: DiagnosticStep.rotatePhoneFlat,
+      title: 'Rotate Phone Flat (Compass Check)',
+      subtitle: 'Z-Axis Magnetometer & Heading',
+      instruction: 'Hold the phone flat and slowly rotate it in a full circle',
+      targetAxisLabel: 'Heading Delta',
+      expectedCriteria: 'Δθ ≥ 180° rotation',
+      icon: Icons.explore_rounded,
+    ),
   ];
 
   @override
@@ -162,6 +185,7 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
   void dispose() {
     _accelSubscription?.cancel();
     _gyroSubscription?.cancel();
+    _magSubscription?.cancel();
     _countdownTimer?.cancel();
     super.dispose();
   }
@@ -169,6 +193,7 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
   void _startSensorStreams() {
     final accelStream = widget.customAccelerometerStream ?? accelerometerEventStream();
     final gyroStream = widget.customGyroscopeStream ?? gyroscopeEventStream();
+    final magStream = widget.customMagnetometerStream ?? magnetometerEventStream();
 
     _accelSubscription = accelStream.listen((AccelerometerEvent event) {
       if (!mounted) return;
@@ -191,6 +216,44 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
       });
       _evaluateCurrentStep();
     });
+
+    try {
+      _magSubscription = magStream.listen(
+        (MagnetometerEvent event) {
+          if (!mounted) return;
+          setState(() {
+            _magX = event.x;
+            _magY = event.y;
+            _magZ = event.z;
+            _hasReceivedSensorData = true;
+
+            // atan2(y, x) compass heading in 0..360°
+            final rad = math.atan2(event.y, event.x);
+            final deg = ((rad * 180.0 / math.pi) + 360.0) % 360.0;
+            _compassHeading = deg;
+
+            if (_currentStepIndex < _steps.length &&
+                _steps[_currentStepIndex].step == DiagnosticStep.rotatePhoneFlat) {
+              if (_lastHeading >= 0) {
+                double diff = (deg - _lastHeading).abs();
+                if (diff > 180.0) diff = 360.0 - diff;
+                _accumulatedHeadingDelta += diff;
+              }
+              _lastHeading = deg;
+            }
+          });
+          _evaluateCurrentStep();
+        },
+        onError: (err) {
+          if (!mounted) return;
+          setState(() {
+            _magnetometerAvailable = false;
+          });
+        },
+      );
+    } catch (_) {
+      _magnetometerAvailable = false;
+    }
   }
 
   void _startStepCountdown() {
@@ -199,6 +262,8 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
       _secondsRemaining = _stepTimeoutSeconds;
       _stepPassed = false;
       _stepTimedOut = false;
+      _lastHeading = -1.0;
+      _accumulatedHeadingDelta = 0.0;
     });
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -249,6 +314,9 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
       case DiagnosticStep.shakeMotion:
         final mag = math.sqrt(_accelX * _accelX + _accelY * _accelY + _accelZ * _accelZ);
         passed = mag > 12.8 || mag < 6.8;
+        break;
+      case DiagnosticStep.rotatePhoneFlat:
+        passed = _accumulatedHeadingDelta >= 180.0;
         break;
       case DiagnosticStep.summary:
         break;
@@ -322,6 +390,8 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
         final mag = math.sqrt(_accelX * _accelX + _accelY * _accelY + _accelZ * _accelZ);
         final dev = (mag - 9.81).abs();
         return (dev / 4.0).clamp(0.0, 1.0);
+      case DiagnosticStep.rotatePhoneFlat:
+        return (_accumulatedHeadingDelta / 180.0).clamp(0.0, 1.0);
       case DiagnosticStep.summary:
         return 1.0;
     }
@@ -342,7 +412,7 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
     final isSummary = _currentStepIndex >= _steps.length;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -369,8 +439,9 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
             ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
+      body: GalaxyBackground(
+        child: SafeArea(
+          child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -492,6 +563,7 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -585,23 +657,19 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
   }) {
     final progressFraction = _computeStepProgressFraction(step.step);
     final isClose = progressFraction.abs() >= 0.8;
+    final stepGlow = _stepPassed
+        ? greenColor
+        : _stepTimedOut
+            ? amberColor
+            : (isDark ? blueColor : const Color(0xFF0891B2));
 
-    return Material(
-      color: surfaceColor,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(
-          color: _stepPassed
-              ? greenColor
-              : _stepTimedOut
-                  ? amberColor
-                  : borderColor,
-          width: _stepPassed || _stepTimedOut ? 1.8 : 1.0,
-        ),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
+    return LiquidGlassCard(
+      borderRadius: 16,
+      glowColor: stepGlow,
+      glowRadius: _stepPassed || _stepTimedOut ? 20 : 12,
+      glowAlpha: isDark ? 0.35 : 0.18,
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
           children: [
             // Status Icon Circle
             Container(
@@ -682,18 +750,122 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
                       letterSpacing: 0.5,
                     ),
                   ),
-                  Text(
-                    step.expectedCriteria,
-                    style: TextStyle(
-                      color: blueColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'monospace',
+                  Flexible(
+                    child: Text(
+                      step.expectedCriteria,
+                      style: TextStyle(
+                        color: blueColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'monospace',
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
             ),
+
+            if (step.step == DiagnosticStep.rotatePhoneFlat && !_magnetometerAvailable) ...[
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: amberColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: amberColor.withValues(alpha: 0.5)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.sensors_off_rounded, color: amberColor, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Magnetometer not available on this device',
+                            style: TextStyle(
+                              color: primaryTextColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'No hardware compass sensor was detected or stream failed. You can skip this step.',
+                      style: TextStyle(color: secondaryTextColor, fontSize: 11.5),
+                    ),
+                    const SizedBox(height: 10),
+                    FilledButton.icon(
+                      onPressed: _skipCurrentStep,
+                      icon: const Icon(Icons.skip_next_rounded, size: 16),
+                      label: const Text('Skip Magnetometer Check'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: amberColor,
+                        foregroundColor: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (step.step == DiagnosticStep.rotatePhoneFlat) ...[
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : blueColor.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isDark ? borderColor : blueColor.withValues(alpha: 0.25)),
+                ),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Transform.rotate(
+                          angle: (_compassHeading * math.pi / 180.0),
+                          child: Icon(Icons.navigation_rounded, color: blueColor, size: 20),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'HEADING: ${_compassHeading.toStringAsFixed(0)}°',
+                          style: TextStyle(
+                            color: primaryTextColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: blueColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${_accumulatedHeadingDelta.toStringAsFixed(0)}° / 180°',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: blueColor,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             const SizedBox(height: 18),
 
@@ -810,7 +982,6 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
             ],
           ],
         ),
-      ),
     );
   }
 
@@ -880,45 +1051,46 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
     required Color secondaryTextColor,
     required Color blueColor,
   }) {
-    return Material(
-      color: isDark ? surfaceColor : const Color(0xFF0891B2).withValues(alpha: 0.03),
-      shape: RoundedRectangleBorder(
-        side: BorderSide(
-          color: isDark ? borderColor : const Color(0xFF0891B2).withValues(alpha: 0.25),
-          width: 1.0,
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return LiquidGlassCard(
+      borderRadius: 16,
+      glowColor: isDark ? const Color(0xFF06B6D4) : const Color(0xFF0891B2),
+      glowRadius: 14,
+      glowAlpha: isDark ? 0.25 : 0.12,
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
-                        shape: BoxShape.circle,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'LIVE HARDWARE READOUT',
-                      style: TextStyle(
-                        color: primaryTextColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'LIVE HARDWARE READOUT',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: primaryTextColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   '100Hz Local Stream',
                   style: TextStyle(
@@ -974,9 +1146,66 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
                 _buildAxisValueBox('Z', _gyroZ, isDark, borderColor, primaryTextColor),
               ],
             ),
+
+            const SizedBox(height: 14),
+
+            // Magnetometer Live Values & Heading (Item 3)
+            Text(
+              'MAGNETOMETER (µT) & COMPASS',
+              style: TextStyle(
+                color: secondaryTextColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                _buildAxisValueBox('X', _magX, isDark, borderColor, primaryTextColor),
+                const SizedBox(width: 8),
+                _buildAxisValueBox('Y', _magY, isDark, borderColor, primaryTextColor),
+                const SizedBox(width: 8),
+                _buildAxisValueBox('Z', _magZ, isDark, borderColor, primaryTextColor),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFF0891B2).withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isDark ? borderColor : const Color(0xFF0891B2).withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'HEADING',
+                          style: TextStyle(
+                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF0891B2),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${_compassHeading.toStringAsFixed(0)}°',
+                          style: TextStyle(
+                            color: primaryTextColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
-      ),
     );
   }
 
@@ -992,7 +1221,7 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
 
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF0F172A) : const Color(0xFF0891B2).withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(8),
@@ -1011,13 +1240,16 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              formatted,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'monospace',
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                formatted,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
           ],
@@ -1083,7 +1315,7 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
             const SizedBox(height: 6),
             Text(
               allPassed
-                  ? 'Physical accelerometer and gyroscope operational across all 3 spatial axes.'
+                  ? 'Physical accelerometer, gyroscope, and magnetometer operational across all spatial axes.'
                   : 'One or more motion thresholds were skipped or timed out. See breakdown below.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: secondaryTextColor),

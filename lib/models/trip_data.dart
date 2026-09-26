@@ -79,4 +79,30 @@ class TripSummary {
     if (totalSec == 0) return 1.0;
     return (gnssAidedDuration.inSeconds / totalSec).clamp(0.0, 1.0);
   }
+
+  TripSummary copyWith({
+    double? totalDistanceKm,
+    Duration? totalDuration,
+    Duration? gnssAidedDuration,
+    Duration? deadReckoningDuration,
+    double? maxDriftPercent,
+    List<RoutePoint>? route,
+    String? destinationName,
+    LatLng? destination,
+    bool? destinationReached,
+    List<LatLng>? plannedRoute,
+  }) {
+    return TripSummary(
+      totalDistanceKm: totalDistanceKm ?? this.totalDistanceKm,
+      totalDuration: totalDuration ?? this.totalDuration,
+      gnssAidedDuration: gnssAidedDuration ?? this.gnssAidedDuration,
+      deadReckoningDuration: deadReckoningDuration ?? this.deadReckoningDuration,
+      maxDriftPercent: maxDriftPercent ?? this.maxDriftPercent,
+      route: route ?? this.route,
+      destinationName: destinationName ?? this.destinationName,
+      destination: destination ?? this.destination,
+      destinationReached: destinationReached ?? this.destinationReached,
+      plannedRoute: plannedRoute ?? this.plannedRoute,
+    );
+  }
 }

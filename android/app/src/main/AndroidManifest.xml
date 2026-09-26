@@ -1,16 +1,33 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="NAV-SHIELD"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <service 
+            android:name="flutter.overlay.window.flutter_overlay_window.OverlayService" 
+            android:exported="false" 
+            android:foregroundServiceType="specialUse">
+            <property 
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" 
+                android:value="Turn-by-turn floating navigation tile" />
+        </service>
+        <service
+            android:name=".NavShieldLifecycleService"
+            android:stopWithTask="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
+            android:supportsPictureInPicture="true"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">

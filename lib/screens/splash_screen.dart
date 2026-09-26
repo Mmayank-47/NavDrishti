@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 import 'destination_entry_screen.dart';
+import 'permissions_onboarding_screen.dart';
 
 /// Screen: BRANDED SPLASH / LAUNCH SCREEN
 ///
@@ -46,11 +48,22 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  void _navigateToHome() {
+  Future<void> _navigateToHome() async {
     if (!mounted) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final hasCompletedOnboarding =
+        prefs.getBool('has_completed_onboarding') ?? false;
+
+    if (!mounted) return;
+
+    final targetScreen = hasCompletedOnboarding
+        ? const DestinationEntryScreen()
+        : const PermissionsOnboardingScreen();
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const DestinationEntryScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) => targetScreen,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },

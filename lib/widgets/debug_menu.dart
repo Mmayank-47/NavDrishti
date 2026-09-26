@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/nav_shield_data_service.dart';
@@ -10,72 +11,108 @@ import '../widgets/nav_toast.dart';
 /// Restyled with clean dark pill-button cards matching the reference mockup.
 class DebugMenu extends StatelessWidget {
   final NavShieldDataService dataService;
+  final VoidCallback? onSimulateRouteDeviation;
+  final VoidCallback? onSimulateOutlierRejection;
+  final VoidCallback? onSimulateGnssOutage;
+  final VoidCallback? onSimulateGnssRecovered;
 
   const DebugMenu({
     super.key,
     required this.dataService,
+    this.onSimulateRouteDeviation,
+    this.onSimulateOutlierRejection,
+    this.onSimulateGnssOutage,
+    this.onSimulateGnssRecovered,
   });
 
-  static void show(BuildContext context, NavShieldDataService service) {
+  static void show(
+    BuildContext context,
+    NavShieldDataService service, {
+    VoidCallback? onSimulateRouteDeviation,
+    VoidCallback? onSimulateOutlierRejection,
+    VoidCallback? onSimulateGnssOutage,
+    VoidCallback? onSimulateGnssRecovered,
+  }) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => DebugMenu(dataService: service),
+      builder: (ctx) => DebugMenu(
+        dataService: service,
+        onSimulateRouteDeviation: onSimulateRouteDeviation,
+        onSimulateOutlierRejection: onSimulateOutlierRejection,
+        onSimulateGnssOutage: onSimulateGnssOutage,
+        onSimulateGnssRecovered: onSimulateGnssRecovered,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final primaryTextColor = isDark ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
     final secondaryTextColor = isDark ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
-    final redColor = isDark ? AppColors.darkRed : AppColors.lightRed;
-    final amberColor = isDark ? AppColors.darkAmber : AppColors.lightAmber;
     final cyanColor = isDark ? AppColors.darkCyan : AppColors.lightCyan;
+    final redColor = isDark ? AppColors.darkRed : AppColors.lightRed;
     final violetColor = isDark ? AppColors.darkViolet : AppColors.lightViolet;
+    final amberColor = isDark ? AppColors.darkAmber : AppColors.lightAmber;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
-      ),
-      decoration: BoxDecoration(
-        color: surfaceColor.withValues(alpha: 0.96),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-          top: BorderSide(
-            color: isDark ? AppColors.darkBorderHighlight : AppColors.lightBorderHighlight,
-            width: 1.2,
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18.0, sigmaY: 18.0),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
           ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.50 : 0.12),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 14),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isDark
+                  ? [
+                      const Color(0xF20B132B),
+                      const Color(0xFA030712),
+                    ]
+                  : [
+                      Colors.white,
+                      const Color(0xF2F1F5F9),
+                    ],
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
+              top: BorderSide(
+                color: isDark ? AppColors.darkLuminousBorder : const Color(0x80CBD5E1),
+                width: 1.2,
               ),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.60 : 0.15),
+                blurRadius: 24,
+                offset: const Offset(0, -6),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Handle
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 14),
+                      decoration: BoxDecoration(
+                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.20),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
 
               // Title Row
               Row(
@@ -146,21 +183,66 @@ class DebugMenu extends StatelessWidget {
               const SizedBox(height: 10),
 
               _DebugActionButton(
+                icon: Icons.alt_route_rounded,
+                iconColor: cyanColor,
+                title: 'Simulate Route Deviation',
+                subtitle: 'Triggers active "Rerouting..." UI recalculation state',
+                isDark: isDark,
+                borderColor: cyanColor.withValues(alpha: 0.35),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  if (onSimulateRouteDeviation != null) {
+                    onSimulateRouteDeviation!();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Simulated Route Deviation triggered')),
+                    );
+                  }
+                },
+              ),
+
+              const SizedBox(height: 10),
+
+              _DebugActionButton(
+                icon: Icons.filter_alt_rounded,
+                iconColor: amberColor,
+                title: 'Simulate GNSS Outlier Rejection',
+                subtitle: 'Triggers Huber M-estimator / χ² multipath rejection cue',
+                isDark: isDark,
+                borderColor: amberColor.withValues(alpha: 0.35),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  if (onSimulateOutlierRejection != null) {
+                    onSimulateOutlierRejection!();
+                  } else {
+                    dataService.triggerSimulatedOutlierRejection();
+                  }
+                },
+              ),
+
+              const SizedBox(height: 10),
+
+              _DebugActionButton(
                 icon: Icons.satellite_alt_rounded,
                 iconColor: amberColor,
                 title: 'Simulate GNSS Outage / Degrading',
                 subtitle: 'Showcases amber "LOW CONFIDENCE" transition toast',
                 isDark: isDark,
+                borderColor: amberColor.withValues(alpha: 0.35),
                 onTap: () {
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                      duration: Duration(seconds: 3),
-                      content: NavToast(type: NavToastType.lowConfidence),
-                    ),
-                  );
+                  if (onSimulateGnssOutage != null) {
+                    onSimulateGnssOutage!();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        duration: Duration(seconds: 3),
+                        content: NavToast(type: NavToastType.lowConfidence),
+                      ),
+                    );
+                  }
                 },
               ),
 
@@ -170,18 +252,23 @@ class DebugMenu extends StatelessWidget {
                 icon: Icons.check_circle_rounded,
                 iconColor: isDark ? AppColors.darkGreen : AppColors.lightGreen,
                 title: 'Simulate GNSS Recovered',
-                subtitle: 'Displays green "GNSS RECOVERED" re-fusion toast',
+                subtitle: 'Transitions through REACQUIRING annealing to GNSS-Aided',
                 isDark: isDark,
+                borderColor: (isDark ? AppColors.darkGreen : AppColors.lightGreen).withValues(alpha: 0.35),
                 onTap: () {
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                      duration: Duration(seconds: 3),
-                      content: NavToast(type: NavToastType.gnssRecovered),
-                    ),
-                  );
+                  if (onSimulateGnssRecovered != null) {
+                    onSimulateGnssRecovered!();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        duration: Duration(seconds: 3),
+                        content: NavToast(type: NavToastType.gnssRecovered),
+                      ),
+                    );
+                  }
                 },
               ),
 
@@ -251,7 +338,9 @@ class DebugMenu extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }
 
@@ -276,20 +365,43 @@ class _DebugActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorder = borderColor ?? (isDark ? AppColors.darkBorder : AppColors.lightBorder);
+    final effectiveBorder = borderColor ?? (isDark ? iconColor.withValues(alpha: 0.35) : AppColors.lightBorder);
 
     return Material(
-      color: (isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle)
-          .withValues(alpha: 0.9),
-      borderRadius: BorderRadius.circular(16),
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                      AppColors.darkSurfaceElevated.withValues(alpha: 0.80),
+                      AppColors.darkSurfaceSubtle.withValues(alpha: 0.65),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.95),
+                      AppColors.lightSurfaceElevated.withValues(alpha: 0.85),
+                    ],
+            ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: effectiveBorder, width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+              if (isDark)
+                BoxShadow(
+                  color: iconColor.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                ),
+            ],
           ),
           child: Row(
             children: [
@@ -298,7 +410,14 @@ class _DebugActionButton extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: iconColor.withValues(alpha: 0.15),
+                  color: iconColor.withValues(alpha: isDark ? 0.20 : 0.15),
+                  border: Border.all(color: iconColor.withValues(alpha: 0.4), width: 0.8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: iconColor.withValues(alpha: isDark ? 0.25 : 0.08),
+                      blurRadius: 6,
+                    ),
+                  ],
                 ),
                 child: Icon(icon, color: iconColor, size: 20),
               ),

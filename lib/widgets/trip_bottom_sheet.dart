@@ -33,10 +33,8 @@ class TripBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final primaryTextColor = isDark ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
     final secondaryTextColor = isDark ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
-    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
     final isDeadReckoning = state.currentMode == NavMode.deadReckoning;
     final cyanColor = isDark ? AppColors.darkCyan : AppColors.lightCyan;
@@ -52,16 +50,40 @@ class TripBottomSheet extends StatelessWidget {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: surfaceColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isDark
+                  ? [
+                      const Color(0xF2312048),
+                      const Color(0xF8203B6F),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.96),
+                      const Color(0xFFEFE8FC).withValues(alpha: 0.94),
+                    ],
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(
-              top: BorderSide(color: borderColor, width: 1.0),
+              top: BorderSide(
+                color: isDeadReckoning
+                    ? AppColors.orchidPink.withValues(alpha: 0.70)
+                    : (isDark
+                        ? AppColors.periwinkle.withValues(alpha: 0.55)
+                        : AppColors.mediumIndigo.withValues(alpha: 0.40)),
+                width: 1.4,
+              ),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
-                blurRadius: 10,
-                offset: const Offset(0, -2),
+                color: Colors.black.withValues(alpha: isDark ? 0.60 : 0.12),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+              BoxShadow(
+                color: (isDeadReckoning ? AppColors.orchidPink : AppColors.periwinkle)
+                    .withValues(alpha: isDark ? 0.25 : 0.12),
+                blurRadius: 16,
               ),
             ],
           ),
@@ -69,15 +91,17 @@ class TripBottomSheet extends StatelessWidget {
             controller: scrollController,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             children: [
-              // 1. Thin Handle Bar
+              // 1. Thin Handle Bar with Glow
               Center(
                 child: Container(
-                  width: 38,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 12),
+                  width: 42,
+                  height: 4.5,
+                  margin: const EdgeInsets.only(bottom: 14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF323B47) : const Color(0xFFD0D5DD),
-                    borderRadius: BorderRadius.circular(2),
+                    color: isDark
+                        ? const Color(0xFF475569)
+                        : const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
               ),
@@ -90,16 +114,30 @@ class TripBottomSheet extends StatelessWidget {
                     'Trip & Sensor Telemetry',
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
                       color: primaryTextColor,
                     ),
                   ),
-                  Text(
-                    settings.formatDistance(state.distanceTraveledKm),
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: primaryTextColor,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (isDeadReckoning ? violetColor : cyanColor)
+                          .withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: (isDeadReckoning ? violetColor : cyanColor)
+                            .withValues(alpha: 0.35),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Text(
+                      settings.formatDistance(state.distanceTraveledKm),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        color: isDeadReckoning ? violetColor : cyanColor,
+                      ),
                     ),
                   ),
                 ],
@@ -109,19 +147,35 @@ class TripBottomSheet extends StatelessWidget {
 
               // 3. Subsystem Mode & Health Status Banner
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkSurfaceSubtle.withValues(alpha: 0.8)
-                      : (isDeadReckoning
-                          ? violetColor.withValues(alpha: 0.08)
-                          : cyanColor.withValues(alpha: 0.08)),
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [
+                            (isDeadReckoning ? violetColor : cyanColor)
+                                .withValues(alpha: 0.16),
+                            const Color(0xFF0F172A).withValues(alpha: 0.70),
+                          ]
+                        : [
+                            (isDeadReckoning ? violetColor : cyanColor)
+                                .withValues(alpha: 0.10),
+                            Colors.white.withValues(alpha: 0.90),
+                          ],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isDeadReckoning
-                        ? violetColor.withValues(alpha: isDark ? 0.5 : 0.4)
-                        : cyanColor.withValues(alpha: isDark ? 0.4 : 0.35),
+                        ? violetColor.withValues(alpha: isDark ? 0.65 : 0.5)
+                        : cyanColor.withValues(alpha: isDark ? 0.55 : 0.45),
+                    width: 1.2,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isDeadReckoning ? violetColor : cyanColor)
+                          .withValues(alpha: isDark ? 0.22 : 0.10),
+                      blurRadius: 10,
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -129,11 +183,17 @@ class TripBottomSheet extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          width: 8,
-                          height: 8,
+                          width: 9,
+                          height: 9,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: isDeadReckoning ? violetColor : cyanColor,
+                            boxShadow: [
+                              BoxShadow(
+                                color: isDeadReckoning ? violetColor : cyanColor,
+                                blurRadius: 6,
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -142,7 +202,7 @@ class TripBottomSheet extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w900,
-                            letterSpacing: 0.4,
+                            letterSpacing: 0.6,
                             color: isDeadReckoning ? violetColor : cyanColor,
                           ),
                         ),
@@ -151,9 +211,9 @@ class TripBottomSheet extends StatelessWidget {
                     Text(
                       isDeadReckoning ? '84% HEALTH' : '98% HEALTH',
                       style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.4,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
                         color: isDeadReckoning
                             ? amberColor
                             : (isDark ? AppColors.darkGreen : AppColors.lightGreen),
@@ -259,18 +319,23 @@ class TripBottomSheet extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         side: BorderSide(
-                          color: isDark ? borderColor : cyanColor.withValues(alpha: 0.35),
+                          color: isDark
+                              ? cyanColor.withValues(alpha: 0.45)
+                              : cyanColor.withValues(alpha: 0.35),
+                          width: 1.2,
                         ),
-                        backgroundColor: isDark ? Colors.transparent : cyanColor.withValues(alpha: 0.05),
+                        backgroundColor: isDark
+                            ? cyanColor.withValues(alpha: 0.08)
+                            : cyanColor.withValues(alpha: 0.05),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: Text(
                         'Calibrate',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: isDark ? primaryTextColor : cyanColor,
                         ),
                       ),
@@ -283,18 +348,23 @@ class TripBottomSheet extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         side: BorderSide(
-                          color: isDark ? borderColor : primaryTextColor.withValues(alpha: 0.2),
+                          color: isDark
+                              ? AppColors.darkBorderHighlight
+                              : primaryTextColor.withValues(alpha: 0.2),
+                          width: 1.2,
                         ),
-                        backgroundColor: isDark ? Colors.transparent : primaryTextColor.withValues(alpha: 0.03),
+                        backgroundColor: isDark
+                            ? Colors.white.withValues(alpha: 0.04)
+                            : primaryTextColor.withValues(alpha: 0.03),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: Text(
                         'Settings',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: primaryTextColor,
                         ),
                       ),
@@ -308,17 +378,19 @@ class TripBottomSheet extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isDark ? AppColors.darkRed : AppColors.lightRed,
                         foregroundColor: Colors.white,
-                        elevation: 2,
+                        elevation: 4,
+                        shadowColor: (isDark ? AppColors.darkRed : AppColors.lightRed)
+                            .withValues(alpha: 0.5),
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: const Text(
                         'End Trip',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
@@ -353,23 +425,42 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveAccent = accentColor ?? (isDark ? AppColors.darkCyan : AppColors.lightCyan);
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.darkSurfaceSubtle
-            : (accentColor != null
-                ? accentColor!.withValues(alpha: 0.04)
-                : const Color(0xFFF8FAFC)),
-        borderRadius: BorderRadius.circular(10),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  const Color(0xFF131D38).withValues(alpha: 0.75),
+                  const Color(0xFF090E1F).withValues(alpha: 0.65),
+                ]
+              : [
+                  Colors.white.withValues(alpha: 0.90),
+                  const Color(0xFFF1F5F9).withValues(alpha: 0.80),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark
-              ? AppColors.darkBorder
-              : (accentColor != null
-                  ? accentColor!.withValues(alpha: 0.22)
-                  : const Color(0xFFCBD5E1)),
-          width: 0.8,
+              ? effectiveAccent.withValues(alpha: 0.30)
+              : effectiveAccent.withValues(alpha: 0.22),
+          width: 1.0,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+          BoxShadow(
+            color: effectiveAccent.withValues(alpha: isDark ? 0.12 : 0.06),
+            blurRadius: 8,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,9 +468,9 @@ class _StatCard extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.6,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.8,
               color: isDark ? secondaryTextColor : const Color(0xFF475569),
             ),
           ),
@@ -388,7 +479,8 @@ class _StatCard extends StatelessWidget {
             value,
             style: TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.3,
               color: primaryTextColor,
             ),
           ),

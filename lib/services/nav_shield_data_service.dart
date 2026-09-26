@@ -39,6 +39,9 @@ abstract class NavShieldDataService {
   /// Trigger a simulated impact/crash event for demonstration
   void triggerSimulatedCrash();
 
+  /// Trigger a simulated GNSS multipath outlier rejection event
+  void triggerSimulatedOutlierRejection();
+
   /// Dismiss and cancel active SOS countdown
   void cancelSos();
 

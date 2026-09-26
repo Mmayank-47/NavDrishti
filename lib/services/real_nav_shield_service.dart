@@ -245,6 +245,11 @@ class RealNavShieldDataService implements NavShieldDataService {
   }
 
   @override
+  void triggerSimulatedOutlierRejection() {
+    _sendAction('trigger_outlier_rejection');
+  }
+
+  @override
   void cancelSos() {
     _sendAction('cancel_sos');
   }

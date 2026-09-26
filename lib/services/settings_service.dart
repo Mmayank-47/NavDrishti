@@ -72,6 +72,10 @@ class SettingsService extends ChangeNotifier {
   static const String _keyBackendHost = 'nav_shield_backend_host';
   static const String _keyBackendPort = 'nav_shield_backend_port';
   static const String _keyUseRealBackend = 'nav_shield_use_real_backend';
+  static const String _keyEmergencyContactName = 'nav_shield_emergency_contact_name';
+  static const String _keyEmergencyContactPhone = 'nav_shield_emergency_contact_phone';
+  static const String _keyEmergencyContactRelation = 'nav_shield_emergency_contact_relation';
+  static const String _keyVoiceGuidanceMuted = 'nav_shield_voice_guidance_muted';
 
   AppThemePreference _themePreference = AppThemePreference.system;
   ImuSource _imuSource = ImuSource.phoneSensors;
@@ -83,6 +87,14 @@ class SettingsService extends ChangeNotifier {
   int _backendPort = 8765;
   bool _useRealBackend = false;
 
+  // Emergency Contact (persisted locally)
+  String _emergencyContactName = '';
+  String _emergencyContactPhone = '';
+  String _emergencyContactRelation = '';
+
+  // Voice Guidance (Mute/Unmute state)
+  bool _voiceGuidanceMuted = false;
+
   AppThemePreference get themePreference => _themePreference;
   ImuSource get imuSource => _imuSource;
   bool get useMetricUnits => _useMetricUnits;
@@ -92,6 +104,14 @@ class SettingsService extends ChangeNotifier {
   String get backendHost => _backendHost;
   int get backendPort => _backendPort;
   bool get useRealBackend => _useRealBackend;
+
+  String get emergencyContactName => _emergencyContactName;
+  String get emergencyContactPhone => _emergencyContactPhone;
+  String get emergencyContactRelation => _emergencyContactRelation;
+  bool get hasEmergencyContact =>
+      _emergencyContactName.trim().isNotEmpty && _emergencyContactPhone.trim().isNotEmpty;
+
+  bool get voiceGuidanceMuted => _voiceGuidanceMuted;
 
   ThemeMode get themeMode {
     switch (_themePreference) {
@@ -114,6 +134,15 @@ class SettingsService extends ChangeNotifier {
     _backendPort = prefs.getInt(_keyBackendPort) ?? 8765;
     _useRealBackend = prefs.getBool(_keyUseRealBackend) ?? false;
 
+    _emergencyContactName =
+        prefs.getString(_keyEmergencyContactName) ?? '';
+    _emergencyContactPhone =
+        prefs.getString(_keyEmergencyContactPhone) ?? '';
+    _emergencyContactRelation =
+        prefs.getString(_keyEmergencyContactRelation) ?? '';
+
+    _voiceGuidanceMuted = prefs.getBool(_keyVoiceGuidanceMuted) ?? false;
+
     final gnssColorVal = prefs.getInt(_keyGnssHaloColor);
     if (gnssColorVal != null) {
       _customGnssColor = Color(gnssColorVal);
@@ -124,6 +153,43 @@ class SettingsService extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  Future<void> setEmergencyContact({
+    required String name,
+    required String phone,
+    String relation = 'Emergency Contact',
+  }) async {
+    _emergencyContactName = name.trim();
+    _emergencyContactPhone = phone.trim();
+    _emergencyContactRelation = relation.trim();
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyEmergencyContactName, _emergencyContactName);
+    await prefs.setString(_keyEmergencyContactPhone, _emergencyContactPhone);
+    await prefs.setString(_keyEmergencyContactRelation, _emergencyContactRelation);
+  }
+
+  Future<void> clearEmergencyContact() async {
+    _emergencyContactName = '';
+    _emergencyContactPhone = '';
+    _emergencyContactRelation = '';
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyEmergencyContactName);
+    await prefs.remove(_keyEmergencyContactPhone);
+    await prefs.remove(_keyEmergencyContactRelation);
+  }
+
+  Future<void> setVoiceGuidanceMuted(bool muted) async {
+    _voiceGuidanceMuted = muted;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyVoiceGuidanceMuted, muted);
+  }
+
+  Future<void> toggleVoiceGuidance() async {
+    await setVoiceGuidanceMuted(!_voiceGuidanceMuted);
   }
 
   Future<void> setThemePreference(AppThemePreference pref) async {

@@ -63,7 +63,10 @@ void main() {
       expect(service.currentState.currentMode, equals(NavMode.deadReckoning));
 
       service.toggleMode();
-      expect(service.currentState.currentMode, equals(NavMode.gnssAided));
+      expect(service.currentState.isReacquiring, isTrue);
+
+      service.triggerSimulatedOutlierRejection();
+      expect(service.currentState.gnssOutlierRejected, isTrue);
 
       service.dispose();
     });

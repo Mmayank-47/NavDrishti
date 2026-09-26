@@ -137,6 +137,11 @@ class HybridNavShieldDataService implements NavShieldDataService {
   }
 
   @override
+  void triggerSimulatedOutlierRejection() {
+    _activeService.triggerSimulatedOutlierRejection();
+  }
+
+  @override
   void cancelSos() {
     _activeService.cancelSos();
   }

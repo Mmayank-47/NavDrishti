@@ -24,6 +24,8 @@ class MockNavShieldDataService implements NavShieldDataService {
   Timer? _ticker;
   Timer? _sosTimer;
   Timer? _calibrationTimer;
+  Timer? _reacquiringTimer;
+  bool _gnssOutlierRejected = false;
 
   // Trip lifecycle state
   TripStatus _tripStatus = TripStatus.idle;
@@ -37,6 +39,10 @@ class MockNavShieldDataService implements NavShieldDataService {
   int _gnssAidedSeconds = 0;
   int _deadReckoningSeconds = 0;
   double _maxDriftSeen = 0.2;
+
+  // Real-time wall-clock tracking for background execution
+  DateTime? _lastTickTime;
+  double _secondsInCurrentMode = 0.0;
 
   // Path simulation variables
   double _simLatitude = 12.97162;
@@ -106,6 +112,8 @@ class MockNavShieldDataService implements NavShieldDataService {
   void startTrip() {
     _tripStatus = TripStatus.active;
     _tripStartTime = DateTime.now();
+    _lastTickTime = DateTime.now();
+    _secondsInCurrentMode = 0.0;
     _routeHistory.clear();
     _gnssAidedSeconds = 0;
     _deadReckoningSeconds = 0;
@@ -156,6 +164,11 @@ class MockNavShieldDataService implements NavShieldDataService {
 
   void _onTick(Timer timer) {
     _tickCount++;
+    final now = DateTime.now();
+    final double dtSeconds = _lastTickTime != null
+        ? (now.difference(_lastTickTime!).inMicroseconds / 1000000.0).clamp(0.01, 2.0)
+        : 0.1;
+    _lastTickTime = now;
 
     // When trip is not active, vehicle is idling at origin (0 km distance, no track history)
     if (_tripStatus != TripStatus.active) {
@@ -172,17 +185,36 @@ class MockNavShieldDataService implements NavShieldDataService {
     }
 
     _ticksInCurrentMode++;
+    _secondsInCurrentMode += dtSeconds;
 
     // 1. Check auto-toggle mode every ~25-30s if not manually forced
-    if (_ticksInCurrentMode >= _ticksPerModeCycle) {
+    if (_ticksInCurrentMode >= _ticksPerModeCycle || _secondsInCurrentMode >= 25.0) {
       _ticksInCurrentMode = 0;
-      final newMode = _state.currentMode == NavMode.gnssAided
-          ? NavMode.deadReckoning
-          : NavMode.gnssAided;
-      _state = _state.copyWith(
-        currentMode: newMode,
-        timeInCurrentMode: 0,
-      );
+      _secondsInCurrentMode = 0.0;
+      if (_state.currentMode == NavMode.deadReckoning && !_state.isReacquiring) {
+        // Transition from Dead Reckoning to GNSS passes through REACQUIRING annealing window
+        _state = _state.copyWith(
+          isReacquiring: true,
+          timeInCurrentMode: 0,
+        );
+        _reacquiringTimer?.cancel();
+        _reacquiringTimer = Timer(const Duration(milliseconds: 2500), () {
+          _ticksInCurrentMode = 0;
+          _secondsInCurrentMode = 0.0;
+          _state = _state.copyWith(
+            currentMode: NavMode.gnssAided,
+            isReacquiring: false,
+            timeInCurrentMode: 0,
+          );
+          _controller.add(_state);
+        });
+      } else if (_state.currentMode == NavMode.gnssAided) {
+        _state = _state.copyWith(
+          currentMode: NavMode.deadReckoning,
+          isReacquiring: false,
+          timeInCurrentMode: 0,
+        );
+      }
     } else if (_tickCount % 10 == 0) {
       // Every 1 second
       _state = _state.copyWith(
@@ -195,11 +227,15 @@ class MockNavShieldDataService implements NavShieldDataService {
       }
     }
 
+    // Auto-simulate Huber M-estimator / χ² multipath spike rejection mid-cycle in GNSS mode
+    if (_state.currentMode == NavMode.gnssAided && _ticksInCurrentMode == 120 && !_gnssOutlierRejected) {
+      triggerSimulatedOutlierRejection();
+    }
+
     // 2. Realistic road-following vehicle advancement
     // Speed variations around ~41.4 km/h (~11.5 m/s)
     _simSpeedMs = 11.5 + 2.0 * math.sin(_tickCount / 50.0);
-    const dtSeconds = 0.1;
-    double stepDistanceMeters = _simSpeedMs * dtSeconds; // ~1.15m per 100ms tick
+    double stepDistanceMeters = _simSpeedMs * dtSeconds; // accurate step matching real elapsed time
 
     // Get active list of waypoints to follow:
     // If a planned route exists, follow it. Otherwise, follow the default Bengaluru road circuit.
@@ -322,6 +358,15 @@ class MockNavShieldDataService implements NavShieldDataService {
     _controller.add(_state);
   }
 
+  void setSosCountdown(int seconds) {
+    _sosTimer?.cancel();
+    _state = _state.copyWith(
+      sosActive: true,
+      sosCountdownSeconds: seconds,
+    );
+    _controller.add(_state);
+  }
+
   @override
   void triggerSimulatedCrash() {
     _sosTimer?.cancel();
@@ -342,12 +387,12 @@ class MockNavShieldDataService implements NavShieldDataService {
         );
         _controller.add(_state);
       } else {
-        // Countdown expired
+        // Countdown expired -> keep SOS active to display notifying action confirmation
         timer.cancel();
         _state = _state.copyWith(
           sosCountdownSeconds: 0,
-          sosActive: false,
-          crashDetected: false,
+          sosActive: true,
+          crashDetected: true,
         );
         _controller.add(_state);
       }
@@ -365,17 +410,67 @@ class MockNavShieldDataService implements NavShieldDataService {
     _controller.add(_state);
   }
 
+  Timer? _outlierTimer;
+
+  @override
+  void triggerSimulatedOutlierRejection() {
+    _outlierTimer?.cancel();
+    _gnssOutlierRejected = true;
+    _state = _state.copyWith(
+      gnssOutlierRejected: true,
+      timestamp: DateTime.now(),
+    );
+    if (!_controller.isClosed) {
+      _controller.add(_state);
+    }
+
+    _outlierTimer = Timer(const Duration(milliseconds: 300), () {
+      _gnssOutlierRejected = false;
+      _state = _state.copyWith(
+        gnssOutlierRejected: false,
+        timestamp: DateTime.now(),
+      );
+      if (!_controller.isClosed) {
+        _controller.add(_state);
+      }
+    });
+  }
+
   @override
   void toggleMode() {
-    final nextMode = _state.currentMode == NavMode.gnssAided
-        ? NavMode.deadReckoning
-        : NavMode.gnssAided;
-    _ticksInCurrentMode = 0;
-    _state = _state.copyWith(
-      currentMode: nextMode,
-      timeInCurrentMode: 0,
-    );
-    _controller.add(_state);
+    _reacquiringTimer?.cancel();
+    if (_state.currentMode == NavMode.deadReckoning) {
+      // Transition from Dead Reckoning to GNSS passes through REACQUIRING annealing window
+      _ticksInCurrentMode = 0;
+      _state = _state.copyWith(
+        isReacquiring: true,
+        timeInCurrentMode: 0,
+      );
+      if (!_controller.isClosed) {
+        _controller.add(_state);
+      }
+
+      _reacquiringTimer = Timer(const Duration(milliseconds: 2500), () {
+        if (_controller.isClosed) return;
+        _ticksInCurrentMode = 0;
+        _state = _state.copyWith(
+          currentMode: NavMode.gnssAided,
+          isReacquiring: false,
+          timeInCurrentMode: 0,
+        );
+        _controller.add(_state);
+      });
+    } else {
+      _ticksInCurrentMode = 0;
+      _state = _state.copyWith(
+        currentMode: NavMode.deadReckoning,
+        isReacquiring: false,
+        timeInCurrentMode: 0,
+      );
+      if (!_controller.isClosed) {
+        _controller.add(_state);
+      }
+    }
   }
 
   @override
@@ -462,6 +557,8 @@ class MockNavShieldDataService implements NavShieldDataService {
     _ticker?.cancel();
     _sosTimer?.cancel();
     _calibrationTimer?.cancel();
+    _reacquiringTimer?.cancel();
+    _outlierTimer?.cancel();
     _controller.close();
     _tripStatusController.close();
   }

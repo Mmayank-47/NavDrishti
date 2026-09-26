@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:nav_shield/models/nav_shield_state.dart';
 import 'package:nav_shield/models/trip_data.dart';
 import 'package:nav_shield/screens/trip_summary_screen.dart';
+import 'package:nav_shield/services/saved_places_service.dart';
 import 'package:nav_shield/services/settings_service.dart';
 import 'package:nav_shield/theme/app_theme.dart';
 import 'package:nav_shield/widgets/sos_button.dart';
@@ -16,12 +17,47 @@ import 'package:nav_shield/screens/settings_screen.dart';
 import 'package:nav_shield/screens/sos_alert_overlay.dart';
 import 'package:nav_shield/screens/splash_screen.dart';
 import 'package:nav_shield/screens/system_health_screen.dart';
-import 'package:nav_shield/widgets/nav_toast.dart';
+import 'package:nav_shield/screens/permissions_onboarding_screen.dart';
 import 'package:nav_shield/services/mock_nav_shield_data_service.dart';
 import 'package:nav_shield/services/nav_shield_data_service.dart';
+import 'package:nav_shield/services/turn_guidance_service.dart';
+import 'package:nav_shield/services/trip_notification_service.dart';
+import 'package:nav_shield/services/overlay_navigation_service.dart';
+import 'package:nav_shield/services/route_calculation_service.dart';
+import 'package:nav_shield/widgets/compact_floating_nav_widget.dart';
+import 'package:nav_shield/widgets/compact_floating_overlay_window.dart';
+import 'package:nav_shield/widgets/nav_toast.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+Widget buildTestWrapper({
+  required Widget child,
+  NavShieldDataService? service,
+  SettingsService? settings,
+  SavedPlacesService? savedPlaces,
+  ThemeData? theme,
+}) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<SettingsService>.value(
+          value: settings ?? SettingsService()),
+      Provider<NavShieldDataService>.value(
+          value: service ?? MockNavShieldDataService(autoStart: false)),
+      ChangeNotifierProvider<SavedPlacesService>.value(
+          value: savedPlaces ?? SavedPlacesService()),
+    ],
+    child: MaterialApp(
+      theme: theme ?? AppTheme.darkTheme,
+      home: child,
+    ),
+  );
+}
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('StatusPill Widget Tests', () {
     testWidgets('Renders minimal dot with optional accuracy in GNSS_AIDED mode', (tester) async {
       await tester.pumpWidget(
@@ -120,14 +156,10 @@ void main() {
       service.startTrip();
 
       await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsService>.value(value: settings),
-            Provider<NavShieldDataService>.value(value: service),
-          ],
-          child: const MaterialApp(
-            home: MainNavigationScreen(),
-          ),
+        buildTestWrapper(
+          settings: settings,
+          service: service,
+          child: const MainNavigationScreen(),
         ),
       );
       await tester.pumpAndSettle();
@@ -203,31 +235,28 @@ void main() {
       final settings = SettingsService();
 
       await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsService>.value(value: settings),
-            Provider<NavShieldDataService>.value(value: service),
-          ],
-          child: const MaterialApp(
-            home: DestinationEntryScreen(),
-          ),
+        buildTestWrapper(
+          service: service,
+          settings: settings,
+          child: const DestinationEntryScreen(),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Verify search bar and default destination chips
       expect(find.text('NAV-SHIELD'), findsOneWidget);
-      expect(find.text('Where to? (Tap map or select below)'), findsOneWidget);
-      expect(find.text('MG Road Metro'), findsOneWidget);
-      expect(find.text('Kanteerava Stadium'), findsOneWidget);
+      expect(find.text('Where are you going?'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Work'), findsOneWidget);
 
       // Tap destination chip
-      final chipFinder = find.text('MG Road Metro');
+      final chipFinder = find.text('Work');
       expect(chipFinder, findsOneWidget);
       await tester.tap(chipFinder);
       await tester.pumpAndSettle();
 
       expect(service.tripStatus, equals(TripStatus.destinationSet));
-      expect(service.currentPlannedRoute?.destinationName, equals('MG Road Metro'));
+      expect(service.currentPlannedRoute?.destinationName, equals('MG Road Metro Station'));
       expect(find.text('Start Navigation'), findsOneWidget);
 
       // Tap Start Navigation
@@ -274,6 +303,107 @@ void main() {
       expect(find.textContaining('GNSS Aided: 70%'), findsOneWidget);
       expect(find.textContaining('Dead Reckoning: 30%'), findsOneWidget);
     });
+
+    testWidgets('Device back button on TripSummaryScreen triggers onNewTrip and navigates to DestinationEntryScreen', (tester) async {
+      bool onNewTripCalled = false;
+      final summary = TripSummary(
+        totalDistanceKm: 5.0,
+        totalDuration: const Duration(minutes: 5),
+        gnssAidedDuration: const Duration(minutes: 5),
+        deadReckoningDuration: Duration.zero,
+        maxDriftPercent: 1.0,
+        route: const [],
+        destinationName: 'MG Road Metro',
+        destinationReached: true,
+      );
+
+      await tester.pumpWidget(
+        buildTestWrapper(
+          child: TripSummaryScreen(
+            summary: summary,
+            settings: SettingsService(),
+            onNewTrip: () => onNewTripCalled = true,
+          ),
+        ),
+      );
+
+      final dynamic widgetsAppState = tester.state(find.byType(WidgetsApp));
+      await widgetsAppState.didPopRoute();
+      await tester.pumpAndSettle();
+
+      expect(onNewTripCalled, isTrue);
+      expect(find.byType(DestinationEntryScreen), findsOneWidget);
+      expect(find.text('Where are you going?'), findsOneWidget);
+    });
+
+    testWidgets('Close X button on TripSummaryScreen navigates to DestinationEntryScreen', (tester) async {
+      bool onNewTripCalled = false;
+      final summary = TripSummary(
+        totalDistanceKm: 5.0,
+        totalDuration: const Duration(minutes: 5),
+        gnssAidedDuration: const Duration(minutes: 5),
+        deadReckoningDuration: Duration.zero,
+        maxDriftPercent: 1.0,
+        route: const [],
+        destinationName: 'MG Road Metro',
+        destinationReached: true,
+      );
+
+      await tester.pumpWidget(
+        buildTestWrapper(
+          child: TripSummaryScreen(
+            summary: summary,
+            settings: SettingsService(),
+            onNewTrip: () => onNewTripCalled = true,
+          ),
+        ),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('trip_summary_close_button')));
+      await tester.pumpAndSettle();
+
+      expect(onNewTripCalled, isTrue);
+      expect(find.byType(DestinationEntryScreen), findsOneWidget);
+      expect(find.text('Where are you going?'), findsOneWidget);
+    });
+
+    testWidgets('Start New Trip button on TripSummaryScreen navigates to DestinationEntryScreen', (tester) async {
+      bool onNewTripCalled = false;
+      final summary = TripSummary(
+        totalDistanceKm: 5.0,
+        totalDuration: const Duration(minutes: 5),
+        gnssAidedDuration: const Duration(minutes: 5),
+        deadReckoningDuration: Duration.zero,
+        maxDriftPercent: 1.0,
+        route: const [],
+        destinationName: 'MG Road Metro',
+        destinationReached: true,
+      );
+
+      await tester.pumpWidget(
+        buildTestWrapper(
+          child: TripSummaryScreen(
+            summary: summary,
+            settings: SettingsService(),
+            onNewTrip: () => onNewTripCalled = true,
+          ),
+        ),
+      );
+
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('start_new_trip_button')),
+        200.0,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('start_new_trip_button')));
+      await tester.pumpAndSettle();
+
+      expect(onNewTripCalled, isTrue);
+      expect(find.byType(DestinationEntryScreen), findsOneWidget);
+      expect(find.text('Where are you going?'), findsOneWidget);
+    });
   });
 
   group('SosAlertOverlay Tests', () {
@@ -282,9 +412,9 @@ void main() {
       service.triggerSimulatedCrash();
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.darkTheme,
-          home: SosAlertOverlay(
+        buildTestWrapper(
+          service: service,
+          child: SosAlertOverlay(
             state: service.currentState,
             dataService: service,
           ),
@@ -336,12 +466,9 @@ void main() {
       final settings = SettingsService();
 
       await tester.pumpWidget(
-        ChangeNotifierProvider<SettingsService>.value(
-          value: settings,
-          child: MaterialApp(
-            theme: AppTheme.darkTheme,
-            home: SettingsScreen(onRecalibrate: () {}),
-          ),
+        buildTestWrapper(
+          settings: settings,
+          child: const SettingsScreen(),
         ),
       );
 
@@ -364,8 +491,13 @@ void main() {
       expect(find.text('Dead Reckoning Color'), findsOneWidget);
       expect(find.textContaining('Red is strictly reserved for SOS'), findsOneWidget);
 
-      expect(find.text('Phone Internal Sensors'), findsOneWidget);
+      expect(find.text('Phone Sensors'), findsOneWidget);
+      expect(find.text('External IMU'), findsOneWidget);
       expect(find.text('Metric Units'), findsOneWidget);
+
+      // Verify Recalibrate Sensors is NOT anywhere in Settings
+      expect(find.text('Recalibrate Sensors'), findsNothing);
+      expect(find.text('Perform 10-second forward vehicle alignment'), findsNothing);
     });
   });
 
@@ -380,16 +512,12 @@ void main() {
 
         for (final theme in [AppTheme.lightTheme, AppTheme.darkTheme]) {
           await tester.pumpWidget(
-            MultiProvider(
-              providers: [
-                ChangeNotifierProvider<SettingsService>.value(value: settings),
-                Provider<NavShieldDataService>.value(value: service),
-              ],
-              child: MaterialApp(
-                theme: theme,
-                home: const Scaffold(
-                  body: MainNavigationScreen(),
-                ),
+            buildTestWrapper(
+              service: service,
+              settings: settings,
+              theme: theme,
+              child: const Scaffold(
+                body: MainNavigationScreen(),
               ),
             ),
           );
@@ -414,15 +542,11 @@ void main() {
       final settings = SettingsService();
 
       await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsService>.value(value: settings),
-            Provider<NavShieldDataService>.value(value: service),
-          ],
-          child: const MaterialApp(
-            home: Scaffold(
-              body: MainNavigationScreen(),
-            ),
+        buildTestWrapper(
+          service: service,
+          settings: settings,
+          child: const Scaffold(
+            body: MainNavigationScreen(),
           ),
         ),
       );
@@ -467,16 +591,12 @@ void main() {
 
       for (final theme in [AppTheme.lightTheme, AppTheme.darkTheme]) {
         await tester.pumpWidget(
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider<SettingsService>.value(value: settings),
-              Provider<NavShieldDataService>.value(value: service),
-            ],
-            child: MaterialApp(
-              theme: theme,
-              home: const Scaffold(
-                body: MainNavigationScreen(),
-              ),
+          buildTestWrapper(
+            service: service,
+            settings: settings,
+            theme: theme,
+            child: const Scaffold(
+              body: MainNavigationScreen(),
             ),
           ),
         );
@@ -514,7 +634,7 @@ void main() {
   });
 
   group('SystemHealthScreen Tests', () {
-    testWidgets('Renders all 4 subsystem cards and reacts to degraded mode', (tester) async {
+    testWidgets('Renders simplified Sensor Actions and confirms subsystem cards removed', (tester) async {
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -523,30 +643,53 @@ void main() {
       final service = MockNavShieldDataService(autoStart: false);
 
       await tester.pumpWidget(
-        Provider<NavShieldDataService>.value(
-          value: service,
-          child: const MaterialApp(
-            home: SystemHealthScreen(),
-          ),
+        buildTestWrapper(
+          service: service,
+          child: const SystemHealthScreen(),
         ),
       );
 
       await tester.pumpAndSettle();
 
-      // Check subsystem cards
-      expect(find.text('GNSS Subsystem'), findsOneWidget);
-      expect(find.text('IMU Subsystem'), findsOneWidget);
-      expect(find.text('INS Subsystem'), findsOneWidget);
-      expect(find.text('EKF Fusion Engine'), findsOneWidget);
-      expect(find.text('ALL SYSTEMS NOMINAL'), findsOneWidget);
+      // Check subsystem cards are NOT present (removed per requirement)
+      expect(find.text('GNSS Subsystem'), findsNothing);
+      expect(find.text('IMU Subsystem'), findsNothing);
+      expect(find.text('INS Subsystem'), findsNothing);
+      expect(find.text('EKF Fusion Engine'), findsNothing);
+      expect(find.text('ALL SYSTEMS NOMINAL'), findsNothing);
 
-      // Now toggle to dead reckoning
-      service.toggleMode();
+      // Check Sensor Actions section
+      expect(find.text('SENSOR ACTIONS'), findsOneWidget);
+      expect(find.text('Recalibrate Sensors'), findsOneWidget);
+      expect(find.text('Run Guided Sensor Diagnostics'), findsOneWidget);
+      expect(find.text('Sensor Management'), findsOneWidget);
+
+      service.dispose();
+    });
+
+    testWidgets('Tapping Recalibrate Sensors triggers callback or navigates', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      bool recalibrateCalled = false;
+      final service = MockNavShieldDataService(autoStart: false);
+
+      await tester.pumpWidget(
+        buildTestWrapper(
+          service: service,
+          child: SystemHealthScreen(
+            onRecalibrate: () => recalibrateCalled = true,
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.text('DEGRADED DEAD-RECKONING ACTIVE'), findsOneWidget);
-      expect(find.text('DENIED'), findsOneWidget);
+      await tester.tap(find.text('Recalibrate Sensors'));
+      await tester.pumpAndSettle();
 
+      expect(recalibrateCalled, isTrue);
       service.dispose();
     });
   });
@@ -589,14 +732,10 @@ void main() {
       final settings = SettingsService();
 
       await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsService>.value(value: settings),
-            Provider<NavShieldDataService>.value(value: service),
-          ],
-          child: const MaterialApp(
-            home: DestinationEntryScreen(),
-          ),
+        buildTestWrapper(
+          service: service,
+          settings: settings,
+          child: const DestinationEntryScreen(),
         ),
       );
 
@@ -621,11 +760,17 @@ void main() {
       expect(find.text('Start Navigation'), findsOneWidget);
       expect(find.textContaining('Drive'), findsOneWidget);
       expect(find.textContaining('Bike'), findsOneWidget);
-      expect(find.textContaining('Walk'), findsOneWidget);
+      expect(find.textContaining('Walk'), findsNothing);
 
-      // Tap 'Bike' tab
+      // Tap 'Bike' tab -> sets vehicle marker style to Bike
       await tester.tap(find.textContaining('Bike'));
       await tester.pumpAndSettle();
+      expect(settings.vehicleIconStyle, VehicleIconStyle.bike);
+
+      // Tap 'Drive' tab -> sets vehicle marker style to Car
+      await tester.tap(find.textContaining('Drive'));
+      await tester.pumpAndSettle();
+      expect(settings.vehicleIconStyle, VehicleIconStyle.car);
 
       service.dispose();
     });
@@ -641,15 +786,11 @@ void main() {
       service.toggleMode(); // Toggle to Dead Reckoning
 
       await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsService>.value(value: settings),
-            Provider<NavShieldDataService>.value(value: service),
-          ],
-          child: const MaterialApp(
-            home: Scaffold(
-              body: MainNavigationScreen(),
-            ),
+        buildTestWrapper(
+          service: service,
+          settings: settings,
+          child: const Scaffold(
+            body: MainNavigationScreen(),
           ),
         ),
       );
@@ -678,27 +819,23 @@ void main() {
       service.startTrip();
 
       await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsService>.value(value: settings),
-            Provider<NavShieldDataService>.value(value: service),
-          ],
-          child: const MaterialApp(
-            home: Scaffold(
-              body: MainNavigationScreen(),
-            ),
+        buildTestWrapper(
+          service: service,
+          settings: settings,
+          child: const Scaffold(
+            body: MainNavigationScreen(),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      // Verify all elements of the old right control stack are gone
+      // Verify all elements of the old right control stack are gone (layers, zoom, 3D)
       expect(find.byIcon(Icons.layers_outlined), findsNothing);
-      expect(find.byIcon(Icons.volume_up_rounded), findsNothing);
-      expect(find.byIcon(Icons.volume_off_rounded), findsNothing);
       expect(find.byIcon(Icons.add_rounded), findsNothing);
       expect(find.byIcon(Icons.remove_rounded), findsNothing);
       expect(find.text('3D'), findsNothing);
+      // Voice guidance is restored near turn-by-turn card
+      expect(find.byKey(const ValueKey('voice_guidance_mute_toggle')), findsOneWidget);
 
       service.dispose();
     });
@@ -711,15 +848,11 @@ void main() {
       service.startTrip();
 
       await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider<SettingsService>.value(value: settings),
-            Provider<NavShieldDataService>.value(value: service),
-          ],
-          child: const MaterialApp(
-            home: Scaffold(
-              body: MainNavigationScreen(),
-            ),
+        buildTestWrapper(
+          service: service,
+          settings: settings,
+          child: const Scaffold(
+            body: MainNavigationScreen(),
           ),
         ),
       );
@@ -758,16 +891,12 @@ void main() {
 
           for (final theme in [AppTheme.darkTheme, AppTheme.lightTheme]) {
             await tester.pumpWidget(
-              MultiProvider(
-                providers: [
-                  ChangeNotifierProvider<SettingsService>.value(value: settings),
-                  Provider<NavShieldDataService>.value(value: service),
-                ],
-                child: MaterialApp(
-                  theme: theme,
-                  home: const Scaffold(
-                    body: MainNavigationScreen(),
-                  ),
+              buildTestWrapper(
+                service: service,
+                settings: settings,
+                theme: theme,
+                child: const Scaffold(
+                  body: MainNavigationScreen(),
                 ),
               ),
             );
@@ -797,6 +926,347 @@ void main() {
       }
 
       service.dispose();
+    });
+  });
+
+  group('Voice Guidance & Trip Recovery Tests', () {
+    testWidgets('Voice guidance mute toggle button updates icon and persists setting', (tester) async {
+      final service = MockNavShieldDataService(autoStart: false);
+      final settings = SettingsService();
+
+      expect(settings.voiceGuidanceMuted, isFalse);
+
+      await tester.pumpWidget(
+        buildTestWrapper(
+          service: service,
+          settings: settings,
+          child: const Scaffold(
+            body: MainNavigationScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Find voice guidance button
+      final voiceBtn = find.byKey(const ValueKey('voice_guidance_mute_toggle'));
+      expect(voiceBtn, findsOneWidget);
+      expect(find.byIcon(Icons.volume_up_rounded), findsOneWidget);
+      // Toggle 1: Tap to mute
+      await tester.tap(voiceBtn);
+      await tester.pump();
+
+      expect(settings.voiceGuidanceMuted, isTrue);
+      // Muted state has diagonal slash (Transform.rotate)
+      expect(find.byType(Transform), findsWidgets);
+
+      // Toggle 2: Tap to unmute
+      await tester.tap(voiceBtn);
+      await tester.pump();
+
+      expect(settings.voiceGuidanceMuted, isFalse);
+      expect(find.byIcon(Icons.volume_up_rounded), findsOneWidget);
+
+      // Toggle 3: Tap to mute again
+      await tester.tap(voiceBtn);
+      await tester.pump();
+
+      expect(settings.voiceGuidanceMuted, isTrue);
+
+      // Toggle 4: Tap to unmute again
+      await tester.tap(voiceBtn);
+      await tester.pump();
+
+      expect(settings.voiceGuidanceMuted, isFalse);
+
+    });
+  });
+
+  group('Mini Nav Widget, SOS Onboarding & Trip Resume Tests', () {
+    testWidgets('CompactFloatingNavWidget renders turn info, is draggable, and handles tap', (tester) async {
+      bool tapped = false;
+      final state = NavShieldState.initial();
+
+      final settings = SettingsService();
+      final service = MockNavShieldDataService(autoStart: false);
+
+      await tester.pumpWidget(
+        buildTestWrapper(
+          service: service,
+          settings: settings,
+          child: Scaffold(
+            body: Stack(
+              children: [
+                CompactFloatingNavWidget(
+                  state: state,
+                  instruction: 'Turn right on MG Road',
+                  distanceToTurn: '240 m',
+                  eta: '4 min',
+                  onTap: () {
+                    tapped = true;
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('240 m'), findsOneWidget);
+      expect(find.text('Turn right on MG Road'), findsOneWidget);
+      expect(find.text('4 min'), findsOneWidget);
+      expect(find.byIcon(Icons.open_in_full_rounded), findsOneWidget);
+
+      // Tap on widget triggers onTap
+      await tester.tap(find.byKey(const ValueKey('compact_floating_nav_draggable')));
+      await tester.pump();
+      expect(tapped, isTrue);
+
+      // Drag widget
+      await tester.drag(find.byKey(const ValueKey('compact_floating_nav_draggable')), const Offset(50, 50));
+      await tester.pump();
+
+      service.dispose();
+    });
+
+    testWidgets('PermissionsOnboardingScreen displays 4 permission tiles and triggers emergency contact prompt on SOS toggle', (tester) async {
+      final settings = SettingsService();
+      await settings.clearEmergencyContact();
+      expect(settings.hasEmergencyContact, isFalse);
+
+      await tester.pumpWidget(
+        buildTestWrapper(
+          settings: settings,
+          child: const PermissionsOnboardingScreen(isModalFromSettings: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Check all 4 permission tiles
+      expect(find.text('Location & Satellite Fix'), findsOneWidget);
+      expect(find.text('Motion & Inertial Sensors'), findsOneWidget);
+      expect(find.text('Lock-Screen & SOS Alerts'), findsOneWidget);
+      expect(find.text('Floating Mini-Nav (PiP / Overlay)'), findsOneWidget);
+
+      // Find switch for SOS Alerts and toggle
+      final switches = find.byType(Switch);
+      expect(switches, findsNWidgets(4));
+
+      // Toggle off and on for SOS Alerts (index 2)
+      await tester.tap(switches.at(2));
+      await tester.pumpAndSettle();
+      await tester.tap(switches.at(2));
+      await tester.pumpAndSettle();
+
+      // Should show Emergency Contact Setup modal because hasEmergencyContact is false
+      expect(find.text('Emergency Contact Setup'), findsOneWidget);
+      expect(find.byKey(const ValueKey('sos_contact_name_field')), findsOneWidget);
+      expect(find.byKey(const ValueKey('sos_contact_phone_field')), findsOneWidget);
+
+      // Fill in and save contact
+      await tester.enterText(find.byKey(const ValueKey('sos_contact_name_field')), 'Rohan Verma');
+      await tester.pump();
+      await tester.enterText(find.byKey(const ValueKey('sos_contact_phone_field')), '+91 99887 76655');
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('sos_contact_save_button')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(settings.hasEmergencyContact, isTrue);
+      expect(settings.emergencyContactName, 'Rohan Verma');
+    });
+
+    testWidgets('MainNavigationScreen minimize button activates floating overlay without fake home screen placeholder', (tester) async {
+      final settings = SettingsService();
+      final service = MockNavShieldDataService(autoStart: false);
+      service.setDestination(const LatLng(12.9756, 77.6066), 'MG Road Metro');
+      service.startTrip();
+
+      await tester.pumpWidget(
+        buildTestWrapper(
+          service: service,
+          settings: settings,
+          child: const Scaffold(
+            body: MainNavigationScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Find minimize button
+      final minimizeBtn = find.byKey(const ValueKey('toggle_mini_nav_pip_button'));
+      expect(minimizeBtn, findsOneWidget);
+
+      // Tap minimize
+      await tester.tap(minimizeBtn);
+      await tester.pumpAndSettle();
+
+      // MUST NOT render fake in-app "Home Screen" placeholder
+      expect(find.text('Home Screen'), findsNothing);
+      // SnackBar confirmation is displayed
+      expect(find.text('Floating navigation overlay active over other apps'), findsOneWidget);
+      // Full navigation HUD remains rendered and ready
+      expect(find.byKey(const ValueKey('end_navigation_button')), findsOneWidget);
+
+      service.dispose();
+    });
+
+    testWidgets('CompactFloatingOverlayWindow renders navigation telemetry correctly', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: CompactFloatingOverlayWindow(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Turn right on MG Road'), findsOneWidget);
+      expect(find.text('240 m'), findsOneWidget);
+      expect(find.text('4 min'), findsOneWidget);
+      expect(find.byIcon(Icons.turn_right_rounded), findsOneWidget);
+      expect(find.textContaining('GNSS'), findsWidgets);
+    });
+
+    testWidgets('CompactFloatingOverlayWindow dynamically updates with live coordinates and INS DR mode', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: CompactFloatingOverlayWindow(
+                initialData: {
+                  'instruction': 'Continue on Residency Road',
+                  'distance': '480 m',
+                  'eta': '2 min',
+                  'mode': 'DEAD_RECKONING',
+                  'speed': '38 km/h',
+                  'heading': 45.0,
+                  'currentLat': 12.9735,
+                  'currentLng': 77.5982,
+                  'progress': 0.65,
+                  'turnType': 'straight',
+                  'routePoints': [
+                    [12.9716, 77.5944],
+                    [12.9735, 77.5982],
+                    [12.9753, 77.6074],
+                  ],
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Continue on Residency Road'), findsOneWidget);
+      expect(find.text('480 m'), findsOneWidget);
+      expect(find.text('2 min'), findsOneWidget);
+      expect(find.textContaining('INS DR'), findsWidgets);
+      expect(find.byIcon(Icons.straight_rounded), findsOneWidget);
+    });
+
+    test('TurnGuidanceService calculates road maneuvers and progress correctly', () {
+      final route = RouteCalculationService.calculateRoute(
+        origin: const LatLng(12.97162, 77.594461),
+        destination: const LatLng(12.975312, 77.607443),
+        destinationName: 'Central Circuit',
+      );
+
+      final guidance = TurnGuidanceService.calculate(
+        currentPos: const LatLng(12.97162, 77.594461),
+        currentHeading: 12.0,
+        distanceTraveledKm: 0.2,
+        plannedRoute: route,
+      );
+
+      expect(guidance.instruction, isNotEmpty);
+      expect(guidance.distanceToTurnText, isNotEmpty);
+      expect(guidance.remainingKm, greaterThan(0.0));
+      expect(guidance.progressRatio, inInclusiveRange(0.0, 1.0));
+    });
+
+    test('TripNotificationService formats Google Maps-style ongoing notification correctly', () async {
+      final notifService = TripNotificationService.instance;
+
+      await notifService.updateTripStatus(
+        mode: NavMode.gnssAided,
+        remainingKm: 1.4,
+        remainingMins: 4,
+        destinationName: 'Central Circuit',
+        instruction: 'Turn right on MG Road',
+        turnType: 'turn_right',
+        distanceToTurn: '240 m',
+        progressRatio: 0.35,
+      );
+
+      expect(notifService.isShowing, isTrue);
+      expect(notifService.lastTitle, contains('240 m'));
+      expect(notifService.lastTitle, contains('Turn right on MG Road'));
+      expect(notifService.lastInstruction, equals('Turn right on MG Road'));
+      expect(notifService.lastTurnType, equals('turn_right'));
+      expect(notifService.lastProgressPercent, equals(35));
+      expect(notifService.lastBody, contains('Central Circuit'));
+
+      // Dismissal on cancel
+      await notifService.cancelTripNotification();
+      expect(notifService.isShowing, isFalse);
+    });
+
+    test('OverlayNavigationService records and serializes live telemetry payload', () async {
+      final overlayService = OverlayNavigationService.instance;
+
+      await overlayService.updateOverlay(
+        instruction: 'Turn left on Brigade Road',
+        distance: '180 m',
+        eta: '3 min',
+        mode: 'GNSS_AIDED',
+        speed: '41 km/h',
+        heading: 88.5,
+        currentLat: 12.973,
+        currentLng: 77.598,
+        progress: 0.42,
+        turnType: 'turn_left',
+        routePoints: [
+          [12.9716, 77.5944],
+          [12.9730, 77.5980],
+        ],
+      );
+
+      expect(overlayService.lastPayload, isNotNull);
+      expect(overlayService.lastPayload!['instruction'], equals('Turn left on Brigade Road'));
+      expect(overlayService.lastPayload!['distance'], equals('180 m'));
+      expect(overlayService.lastPayload!['heading'], equals(88.5));
+      expect(overlayService.lastPayload!['turnType'], equals('turn_left'));
+      expect(overlayService.lastPayload!['progress'], equals(0.42));
+    });
+
+    testWidgets('CompactFloatingOverlayWindow has enlarged dimensions (320x210) and interactive expand button', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: CompactFloatingOverlayWindow(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Verify enlarged container size (320 width x 210 height)
+      final containerFinder = find.byWidgetPredicate(
+        (widget) => widget is Container && widget.constraints?.maxWidth == 320.0,
+      );
+      expect(containerFinder, findsOneWidget);
+
+      // Verify dedicated expand button
+      final expandIconFinder = find.byIcon(Icons.open_in_full_rounded);
+      expect(expandIconFinder, findsOneWidget);
+
+      // Verify tapping the expand button executes tap gesture smoothly
+      await tester.tap(expandIconFinder);
+      await tester.pump();
     });
   });
 }

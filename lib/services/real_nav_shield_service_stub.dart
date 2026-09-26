@@ -105,6 +105,11 @@ class RealNavShieldDataService implements NavShieldDataService {
   }
 
   @override
+  void triggerSimulatedOutlierRejection() {
+    // Send debug outlier rejection trigger packet to Python engine if supported
+  }
+
+  @override
   void toggleMode() {
     // Send mode override packet to backend
   }

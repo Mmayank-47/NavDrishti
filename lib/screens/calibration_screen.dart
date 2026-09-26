@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/nav_shield_state.dart';
 import '../services/nav_shield_data_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/galaxy_background.dart';
 import 'sensor_diagnostics_screen.dart';
 
 /// Screen 3: CALIBRATION SCREEN
@@ -28,7 +29,6 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryTextColor = isDark ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
     final secondaryTextColor = isDark ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
-    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final blueColor = isDark ? AppColors.darkBlue : AppColors.lightBlue;
 
@@ -40,7 +40,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
         final isCalibrating = state.alignmentStatus == AlignmentStatus.calibrating;
 
         return Scaffold(
-          backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+          backgroundColor: Colors.transparent,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -57,8 +57,9 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
               ),
             ),
           ),
-          body: SafeArea(
-            child: LayoutBuilder(
+          body: GalaxyBackground(
+            child: SafeArea(
+              child: LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   child: ConstrainedBox(
@@ -75,29 +76,39 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Phone Mount Graphic
+                      // Phone Mount Graphic with concentric glow
                       Container(
-                        width: 110,
-                        height: 110,
+                        width: 120,
+                        height: 120,
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? surfaceColor
-                              : (isCalibrating
-                                  ? blueColor.withValues(alpha: 0.08)
-                                  : const Color(0xFF10B981).withValues(alpha: 0.08)),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: isDark
+                                ? [
+                                    (isCalibrating ? blueColor : const Color(0xFF10B981)).withValues(alpha: 0.22),
+                                    AppColors.darkSurfaceElevated.withValues(alpha: 0.70),
+                                  ]
+                                : [
+                                    Colors.white,
+                                    (isCalibrating ? blueColor : const Color(0xFF10B981)).withValues(alpha: 0.12),
+                                  ],
+                          ),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isDark
-                                ? borderColor
-                                : (isCalibrating
-                                    ? blueColor.withValues(alpha: 0.35)
-                                    : const Color(0xFF10B981).withValues(alpha: 0.35)),
+                            color: (isCalibrating ? blueColor : const Color(0xFF10B981)).withValues(alpha: isDark ? 0.60 : 0.40),
                             width: 2.0,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isCalibrating ? blueColor : const Color(0xFF10B981)).withValues(alpha: isDark ? 0.35 : 0.15),
+                              blurRadius: 20,
+                            ),
+                          ],
                         ),
                         child: Icon(
                           isCalibrating ? Icons.navigation_rounded : Icons.check_circle_rounded,
-                          size: 52,
+                          size: 54,
                           color: isCalibrating ? blueColor : const Color(0xFF10B981),
                         ),
                       ),
@@ -107,7 +118,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                         isCalibrating ? 'Aligning Sensors' : 'Sensors Calibrated',
                         style: TextStyle(
                           fontSize: 24,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w900,
                           color: primaryTextColor,
                           letterSpacing: -0.4,
                         ),
@@ -122,7 +133,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                               : 'IMU orientation aligned with vehicle forward axis. Dead reckoning is active and calibrated.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 15,
                             height: 1.4,
                             color: secondaryTextColor,
                           ),
@@ -132,11 +143,12 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
 
                       // Progress Indicator during calibration
                       if (isCalibrating) ...[
-                        const SizedBox(
+                        SizedBox(
                           width: 48,
                           height: 48,
                           child: CircularProgressIndicator(
                             strokeWidth: 4,
+                            valueColor: AlwaysStoppedAnimation<Color>(blueColor),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -150,14 +162,20 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                         ),
                       ] else ...[
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.12 : 0.10),
-                            borderRadius: BorderRadius.circular(20),
+                            color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.18 : 0.12),
+                            borderRadius: BorderRadius.circular(24),
                             border: Border.all(
-                              color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.3 : 0.4),
+                              color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.5 : 0.4),
                               width: 1.0,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.25 : 0.10),
+                                blurRadius: 10,
+                              ),
+                            ],
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
@@ -168,7 +186,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                                 'READY FOR NAVIGATION',
                                 style: TextStyle(
                                   color: Color(0xFF10B981),
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w800,
                                   fontSize: 13,
                                   letterSpacing: 0.6,
                                 ),
@@ -184,25 +202,40 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                   Column(
                     children: [
                       if (!isCalibrating) ...[
-                        SizedBox(
+                        Container(
                           width: double.infinity,
                           height: 52,
-                          child: FilledButton(
+                          decoration: BoxDecoration(
+                            gradient: AppColors.cyanGlowGradient,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: blueColor.withValues(alpha: 0.40),
+                                blurRadius: 16,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
                             onPressed: () {
                               Navigator.of(context).pop();
                             },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: blueColor,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: const Color(0xFF030712),
+                              shadowColor: Colors.transparent,
+                              elevation: 0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
                             child: const Text(
                               'Return to Navigation',
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.4,
+                                color: Color(0xFF030712),
                               ),
                             ),
                           ),
@@ -217,18 +250,18 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                             },
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: isDark ? borderColor : blueColor.withValues(alpha: 0.35),
+                                color: isDark ? blueColor.withValues(alpha: 0.45) : blueColor.withValues(alpha: 0.35),
                               ),
-                              backgroundColor: isDark ? Colors.transparent : blueColor.withValues(alpha: 0.04),
+                              backgroundColor: isDark ? AppColors.darkSurfaceSubtle.withValues(alpha: 0.6) : blueColor.withValues(alpha: 0.04),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
                             child: Text(
                               'Recalibrate Alignment',
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                                 color: isDark ? primaryTextColor : blueColor,
                               ),
                             ),
@@ -250,7 +283,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                               'Run Hardware Sensor Diagnostics',
                               style: TextStyle(
                                 fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                                 color: blueColor,
                               ),
                             ),
@@ -267,14 +300,14 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: borderColor),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
                             child: Text(
                               'Cancel',
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                                 color: secondaryTextColor,
                               ),
                             ),
@@ -291,6 +324,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                 );
               },
             ),
+          ),
           ),
         );
       },

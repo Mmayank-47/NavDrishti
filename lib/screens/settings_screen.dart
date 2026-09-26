@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/settings_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/galaxy_background.dart';
+import '../widgets/liquid_glass_card.dart';
 import '../widgets/vehicle_marker.dart';
+import 'permissions_onboarding_screen.dart';
 
 /// Screen: SETTINGS SCREEN
 ///
@@ -12,14 +15,12 @@ import '../widgets/vehicle_marker.dart';
 ///   plus custom color pickers (excluding red)
 /// - VEHICLE ICON (Arrow, 3D Car, 3D Bike) with preview markers
 /// - APPEARANCE (Follow System, Dark Mode, Light Mode)
-/// - Units, Sensor Source, Recalibrate, and Backend connection settings
+/// - Units, Sensor Source, and Backend connection settings
 class SettingsScreen extends StatelessWidget {
-  final VoidCallback? onRecalibrate;
   final bool showBackButton;
 
   const SettingsScreen({
     super.key,
-    this.onRecalibrate,
     this.showBackButton = false,
   });
 
@@ -29,12 +30,11 @@ class SettingsScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryTextColor = isDark ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
     final secondaryTextColor = isDark ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
-    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final blueColor = isDark ? AppColors.darkBlue : AppColors.lightBlue;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -55,8 +55,9 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: SafeArea(
-        child: ListView(
+      body: GalaxyBackground(
+        child: SafeArea(
+          child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           children: [
             // 1. CONFIDENCE VISUALIZATION & COLOR SYSTEM
@@ -67,13 +68,9 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            Material(
-              color: surfaceColor.withValues(alpha: isDark ? 0.90 : 0.95),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(color: isDark ? borderColor : AppColors.lightBlue.withValues(alpha: 0.22), width: 1.0),
-              ),
+            LiquidGlassCard(
+              glowColor: isDark ? AppColors.darkCyan : AppColors.lightBlue,
+              padding: EdgeInsets.zero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -138,77 +135,70 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            Material(
-              color: surfaceColor.withValues(alpha: isDark ? 0.90 : 0.95),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(color: isDark ? borderColor : AppColors.lightBlue.withValues(alpha: 0.22), width: 1.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                child: RadioGroup<VehicleIconStyle>(
-                  groupValue: settings.vehicleIconStyle,
-                  onChanged: (val) {
-                    if (val != null) settings.setVehicleIconStyle(val);
-                  },
-                  child: Column(
-                    children: [
-                      RadioListTile<VehicleIconStyle>(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text('Arrow (Directional)', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
-                        subtitle: Text('Flat minimalist navigation chevron', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
-                        secondary: SizedBox(
-                          width: 34,
-                          height: 34,
-                          child: VehicleMarker(
-                            heading: 0,
-                            isDeadReckoning: false,
-                            isDark: isDark,
-                            iconStyle: VehicleIconStyle.arrow,
-                          ),
+            LiquidGlassCard(
+              glowColor: isDark ? AppColors.darkBlue : AppColors.lightBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              child: RadioGroup<VehicleIconStyle>(
+                groupValue: settings.vehicleIconStyle,
+                onChanged: (val) {
+                  if (val != null) settings.setVehicleIconStyle(val);
+                },
+                child: Column(
+                  children: [
+                    RadioListTile<VehicleIconStyle>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('Arrow (Directional)', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
+                      subtitle: Text('Flat minimalist navigation chevron', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                      secondary: SizedBox(
+                        width: 34,
+                        height: 34,
+                        child: VehicleMarker(
+                          heading: 0,
+                          isDeadReckoning: false,
+                          isDark: isDark,
+                          iconStyle: VehicleIconStyle.arrow,
                         ),
-                        value: VehicleIconStyle.arrow,
                       ),
-                      Divider(color: borderColor, height: 1),
-                      RadioListTile<VehicleIconStyle>(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text('3D Car (Automobile)', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
-                        subtitle: Text('Isometric angled passenger car', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
-                        secondary: SizedBox(
-                          width: 34,
-                          height: 34,
-                          child: VehicleMarker(
-                            heading: 0,
-                            isDeadReckoning: false,
-                            isDark: isDark,
-                            iconStyle: VehicleIconStyle.car,
-                          ),
+                      value: VehicleIconStyle.arrow,
+                    ),
+                    Divider(color: borderColor, height: 1),
+                    RadioListTile<VehicleIconStyle>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('3D Car (Automobile)', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
+                      subtitle: Text('Isometric angled passenger car', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                      secondary: SizedBox(
+                        width: 34,
+                        height: 34,
+                        child: VehicleMarker(
+                          heading: 0,
+                          isDeadReckoning: false,
+                          isDark: isDark,
+                          iconStyle: VehicleIconStyle.car,
                         ),
-                        value: VehicleIconStyle.car,
                       ),
-                      Divider(color: borderColor, height: 1),
-                      RadioListTile<VehicleIconStyle>(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text('3D Bike (Two-Wheeler)', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
-                        subtitle: Text('Isometric angled commuter motorcycle', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
-                        secondary: SizedBox(
-                          width: 34,
-                          height: 34,
-                          child: VehicleMarker(
-                            heading: 0,
-                            isDeadReckoning: false,
-                            isDark: isDark,
-                            iconStyle: VehicleIconStyle.bike,
-                          ),
+                      value: VehicleIconStyle.car,
+                    ),
+                    Divider(color: borderColor, height: 1),
+                    RadioListTile<VehicleIconStyle>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('3D Bike (Two-Wheeler)', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
+                      subtitle: Text('Isometric angled commuter motorcycle', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                      secondary: SizedBox(
+                        width: 34,
+                        height: 34,
+                        child: VehicleMarker(
+                          heading: 0,
+                          isDeadReckoning: false,
+                          isDark: isDark,
+                          iconStyle: VehicleIconStyle.bike,
                         ),
-                        value: VehicleIconStyle.bike,
                       ),
-                    ],
-                  ),
+                      value: VehicleIconStyle.bike,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -223,71 +213,110 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            Material(
-              color: surfaceColor.withValues(alpha: isDark ? 0.90 : 0.95),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(color: isDark ? borderColor : AppColors.lightBlue.withValues(alpha: 0.22), width: 1.0),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                child: RadioGroup<AppThemePreference>(
-                  groupValue: settings.themePreference,
-                  onChanged: (val) {
-                    if (val != null) settings.setThemePreference(val);
-                  },
-                  child: Column(
-                    children: [
-                      RadioListTile<AppThemePreference>(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text('Follow System', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
-                        subtitle: Text('Match device light/dark mode', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
-                        secondary: Icon(Icons.brightness_auto, color: isDark ? secondaryTextColor : AppColors.lightBlue),
-                        value: AppThemePreference.system,
-                      ),
-                      Divider(color: isDark ? borderColor : AppColors.lightBlue.withValues(alpha: 0.15), height: 1),
-                      RadioListTile<AppThemePreference>(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text('Dark Mode', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
-                        subtitle: Text('Deep navy-black HUD visual style', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
-                        secondary: Icon(Icons.dark_mode_rounded, color: isDark ? secondaryTextColor : AppColors.lightViolet),
-                        value: AppThemePreference.dark,
-                      ),
-                      Divider(color: isDark ? borderColor : AppColors.lightBlue.withValues(alpha: 0.15), height: 1),
-                      RadioListTile<AppThemePreference>(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text('Light Mode', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
-                        subtitle: Text('High contrast daytime palette', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
-                        secondary: Icon(Icons.light_mode_rounded, color: isDark ? secondaryTextColor : AppColors.lightAmber),
-                        value: AppThemePreference.light,
-                      ),
-                    ],
-                  ),
+            LiquidGlassCard(
+              glowColor: isDark ? AppColors.darkViolet : AppColors.lightViolet,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              child: RadioGroup<AppThemePreference>(
+                groupValue: settings.themePreference,
+                onChanged: (val) {
+                  if (val != null) settings.setThemePreference(val);
+                },
+                child: Column(
+                  children: [
+                    RadioListTile<AppThemePreference>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('Follow System', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
+                      subtitle: Text('Match device light/dark mode', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                      secondary: Icon(Icons.brightness_auto, color: isDark ? secondaryTextColor : AppColors.lightBlue),
+                      value: AppThemePreference.system,
+                    ),
+                    Divider(color: isDark ? borderColor : AppColors.lightBlue.withValues(alpha: 0.15), height: 1),
+                    RadioListTile<AppThemePreference>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('Dark Mode', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
+                      subtitle: Text('Deep obsidian-black HUD visual style', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                      secondary: Icon(Icons.dark_mode_rounded, color: isDark ? secondaryTextColor : AppColors.lightViolet),
+                      value: AppThemePreference.dark,
+                    ),
+                    Divider(color: isDark ? borderColor : AppColors.lightBlue.withValues(alpha: 0.15), height: 1),
+                    RadioListTile<AppThemePreference>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('Light Mode', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
+                      subtitle: Text('High contrast daytime frosted palette', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                      secondary: Icon(Icons.light_mode_rounded, color: isDark ? secondaryTextColor : AppColors.lightAmber),
+                      value: AppThemePreference.light,
+                    ),
+                  ],
                 ),
               ),
             ),
 
             const SizedBox(height: 22),
 
-            // 4. UNITS & SENSORS SECTION
+            // 4. SENSOR SOURCE SECTION (Item 1)
             _SectionHeader(
-              title: 'PREFERENCES & SENSORS',
+              title: 'SENSOR SOURCE',
               textColor: secondaryTextColor,
               accentColor: isDark ? AppColors.darkCyan : AppColors.lightBlue,
             ),
             const SizedBox(height: 8),
 
-            Material(
-              color: surfaceColor.withValues(alpha: isDark ? 0.90 : 0.95),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(color: isDark ? borderColor : AppColors.lightBlue.withValues(alpha: 0.22), width: 1.0),
+            LiquidGlassCard(
+              glowColor: isDark ? AppColors.darkCyan : AppColors.lightBlue,
+              padding: EdgeInsets.zero,
+              child: RadioGroup<ImuSource>(
+                groupValue: settings.imuSource,
+                onChanged: (val) {
+                  if (val != null) settings.setImuSource(val);
+                },
+                child: Column(
+                  children: [
+                    RadioListTile<ImuSource>(
+                      title: Text(
+                        'Phone Sensors',
+                        style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: Text(
+                        'Built-in Accelerometer & Gyroscope (Default)',
+                        style: TextStyle(color: secondaryTextColor, fontSize: 12),
+                      ),
+                      secondary: Icon(Icons.phone_android_rounded, color: blueColor),
+                      value: ImuSource.phoneSensors,
+                    ),
+                    Divider(color: borderColor, height: 1),
+                    RadioListTile<ImuSource>(
+                      title: Text(
+                        'External IMU',
+                        style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: Text(
+                        'Hardware FOG / MEMS Interface (NAV-SHIELD Edge)',
+                        style: TextStyle(color: secondaryTextColor, fontSize: 12),
+                      ),
+                      secondary: Icon(Icons.developer_board_rounded, color: blueColor),
+                      value: ImuSource.externalImu,
+                    ),
+                  ],
+                ),
               ),
+            ),
+
+            const SizedBox(height: 22),
+
+            // 5. PREFERENCES & TOOLS SECTION
+            _SectionHeader(
+              title: 'PREFERENCES & TOOLS',
+              textColor: secondaryTextColor,
+              accentColor: isDark ? AppColors.darkCyan : AppColors.lightBlue,
+            ),
+            const SizedBox(height: 8),
+
+            LiquidGlassCard(
+              glowColor: isDark ? AppColors.darkCyan : AppColors.lightBlue,
+              padding: EdgeInsets.zero,
               child: Column(
                 children: [
                   SwitchListTile(
@@ -301,22 +330,111 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   Divider(color: borderColor, height: 1),
                   ListTile(
-                    title: Text('Phone Internal Sensors', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
-                    subtitle: Text('Using device built-in Accelerometer & Gyroscope', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
-                    trailing: Icon(Icons.sensors_rounded, color: blueColor),
-                  ),
-                  Divider(color: borderColor, height: 1),
-                  ListTile(
-                    title: Text('Recalibrate Sensors', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
-                    subtitle: Text('Perform 10-second forward vehicle alignment', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
-                    trailing: Icon(Icons.arrow_forward_ios_rounded, size: 16, color: secondaryTextColor),
+                    title: Text('App & Sensor Permissions', style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.w700)),
+                    subtitle: Text('Manage location, motion sensors, and notification access', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                    trailing: Icon(Icons.security_rounded, color: blueColor),
                     onTap: () {
-                      if (showBackButton) {
-                        Navigator.of(context).pop();
-                      }
-                      onRecalibrate?.call();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const PermissionsOnboardingScreen(isModalFromSettings: true),
+                        ),
+                      );
                     },
                   ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 22),
+
+            // 6. EMERGENCY CONTACT & SOS
+            _SectionHeader(
+              title: 'EMERGENCY CONTACT & SOS',
+              textColor: secondaryTextColor,
+              accentColor: isDark ? AppColors.darkRed : AppColors.lightRed,
+            ),
+            const SizedBox(height: 8),
+
+            LiquidGlassCard(
+              glowColor: isDark ? AppColors.darkRed : AppColors.lightRed,
+              borderColor: (isDark ? AppColors.darkRed : AppColors.lightRed).withValues(alpha: 0.40),
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: (isDark ? AppColors.darkRed : AppColors.lightRed)
+                            .withValues(alpha: 0.18),
+                        border: Border.all(
+                          color: (isDark ? AppColors.darkRed : AppColors.lightRed).withValues(alpha: 0.45),
+                          width: 1.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isDark ? AppColors.darkRed : AppColors.lightRed).withValues(alpha: 0.30),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.contact_emergency_rounded,
+                        color: isDark ? AppColors.darkRed : AppColors.lightRed,
+                        size: 22,
+                      ),
+                    ),
+                    title: Text(
+                      settings.hasEmergencyContact
+                          ? settings.emergencyContactName
+                          : 'No Emergency Contact Configured',
+                      style: TextStyle(
+                        color: primaryTextColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                    subtitle: Text(
+                      settings.hasEmergencyContact
+                          ? '${settings.emergencyContactPhone} · ${settings.emergencyContactRelation}'
+                          : 'Tap to configure contact for crash dispatch alerts',
+                      style: TextStyle(color: secondaryTextColor, fontSize: 12),
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(Icons.edit_rounded, color: isDark ? AppColors.darkCyan : AppColors.lightBlue, size: 20),
+                      onPressed: () => _showEmergencyContactDialog(context, settings),
+                    ),
+                    onTap: () => _showEmergencyContactDialog(context, settings),
+                  ),
+                  if (settings.hasEmergencyContact) ...[
+                    Divider(color: borderColor, height: 1),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Notified on crash countdown expiry',
+                            style: TextStyle(fontSize: 11, color: secondaryTextColor),
+                          ),
+                          TextButton(
+                            onPressed: () => settings.clearEmergencyContact(),
+                            child: Text(
+                              'Remove',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.darkRed : AppColors.lightRed,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -325,6 +443,105 @@ class SettingsScreen extends StatelessWidget {
           ],
         ),
       ),
+      ),
+    );
+  }
+
+  void _showEmergencyContactDialog(BuildContext context, SettingsService settings) {
+    final nameController = TextEditingController(text: settings.emergencyContactName);
+    final phoneController = TextEditingController(text: settings.emergencyContactPhone);
+    final relationController = TextEditingController(text: settings.emergencyContactRelation);
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final primaryText = isDark ? AppColors.darkPrimaryText : AppColors.lightPrimaryText;
+        final secondaryText = isDark ? AppColors.darkSecondaryText : AppColors.lightSecondaryText;
+        final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+        final cyanColor = isDark ? AppColors.darkCyan : AppColors.lightBlue;
+
+        return AlertDialog(
+          backgroundColor: surfaceColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+            ),
+          ),
+          title: Text(
+            'Emergency Contact Setup',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: primaryText,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'This contact will receive automated SMS/distress telemetry if a vehicle impact or SOS alert timer expires.',
+                  style: TextStyle(fontSize: 12, color: secondaryText),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameController,
+                  style: TextStyle(color: primaryText),
+                  decoration: InputDecoration(
+                    labelText: 'Contact Full Name',
+                    labelStyle: TextStyle(color: secondaryText),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  style: TextStyle(color: primaryText),
+                  decoration: InputDecoration(
+                    labelText: 'Phone Number',
+                    labelStyle: TextStyle(color: secondaryText),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: relationController,
+                  style: TextStyle(color: primaryText),
+                  decoration: InputDecoration(
+                    labelText: 'Relationship (e.g. Sister, Spouse, Friend)',
+                    labelStyle: TextStyle(color: secondaryText),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text('Cancel', style: TextStyle(color: secondaryText)),
+            ),
+            FilledButton(
+              onPressed: () {
+                settings.setEmergencyContact(
+                  name: nameController.text.trim(),
+                  phone: phoneController.text.trim(),
+                  relation: relationController.text.trim().isEmpty ? 'Contact' : relationController.text.trim(),
+                );
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Emergency contact saved successfully')),
+                );
+              },
+              style: FilledButton.styleFrom(backgroundColor: cyanColor),
+              child: const Text('Save Contact'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

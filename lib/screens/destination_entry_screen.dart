@@ -1,22 +1,23 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../models/nav_shield_state.dart';
 import '../models/trip_data.dart';
 import '../services/nav_shield_data_service.dart';
+import '../services/search_location_service.dart';
 import '../services/settings_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/galaxy_background.dart';
 import '../widgets/mapbox_nav_map.dart';
-import 'calibration_screen.dart';
 import 'main_navigation_screen.dart';
 import 'settings_screen.dart';
 import 'system_health_screen.dart';
 
 enum TravelMode {
   drive('Drive', Icons.directions_car_rounded, 32.0),
-  bike('Bike', Icons.two_wheeler_rounded, 24.0),
-  walk('Walk', Icons.directions_walk_rounded, 5.0);
+  bike('Bike', Icons.two_wheeler_rounded, 24.0);
 
   final String label;
   final IconData icon;
@@ -28,8 +29,8 @@ enum TravelMode {
 ///
 /// Features:
 /// - Branded Header: small shield logo + "NAV-SHIELD / Resilient Navigation" + settings gear
-/// - Search Bar: "Where are you going?" with mic icon
-/// - Quick-access shortcut cards (Home / College / Work / More)
+/// - Search Bar: "Where are you going?" with live typed search results list
+/// - Quick-access shortcut cards (Home / College / Work / More) - Editable & Persisted
 /// - Recent Destinations list with "See all"
 /// - "Tap on the map to set a destination" floating hint card
 /// - Bottom navigation bar with three tabs: (Navigate / System / Settings)
@@ -44,7 +45,7 @@ class DestinationEntryScreen extends StatefulWidget {
 class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
   final TextEditingController _searchController = TextEditingController();
   int _currentTabIndex = 0;
-  TravelMode _selectedTravelMode = TravelMode.drive;
+  List<SearchLocation> _searchResults = [];
 
   // Preset destinations around Bangalore center
   static final List<Map<String, dynamic>> _presetDestinations = [
@@ -76,36 +77,58 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
       'icon': Icons.home_rounded,
       'name': 'Home (Lavelle Rd)',
       'point': const LatLng(12.971598, 77.594566),
-      'colorLight': AppColors.lightBlue,
-      'colorDark': AppColors.darkBlue,
+      'colorLight': Color(0xFF384F95),
+      'colorDark': Color(0xFFA6BAEE),
     },
     {
       'title': 'College',
       'icon': Icons.school_rounded,
       'name': 'UVCE College Campus',
       'point': const LatLng(12.9734, 77.5855),
-      'colorLight': AppColors.lightViolet,
-      'colorDark': AppColors.darkViolet,
+      'colorLight': Color(0xFF8E68A9),
+      'colorDark': Color(0xFFBC7EBF),
     },
     {
       'title': 'Work',
       'icon': Icons.work_rounded,
-      'name': 'MG Road Metro',
+      'name': 'MG Road Metro Station',
       'point': const LatLng(12.9756, 77.6066),
-      'colorLight': AppColors.lightGreen,
-      'colorDark': AppColors.darkGreen,
+      'colorLight': Color(0xFF203B6F),
+      'colorDark': Color(0xFFDBC9F9),
     },
     {
       'title': 'More',
       'icon': Icons.more_horiz_rounded,
       'name': 'Kanteerava Stadium',
       'point': const LatLng(12.9698, 77.5926),
-      'colorLight': AppColors.lightAmber,
-      'colorDark': AppColors.darkAmber,
+      'colorLight': Color(0xFFBC7EBF),
+      'colorDark': Color(0xFFC792EA),
     },
   ];
 
   StreamSubscription<TripStatus>? _tripStatusSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.trim();
+    if (query.isNotEmpty) {
+      final results = SearchLocationService.search(query);
+      setState(() {
+        _searchResults = results;
+      });
+    } else {
+      if (_searchResults.isNotEmpty) {
+        setState(() {
+          _searchResults = [];
+        });
+      }
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -120,6 +143,7 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
   @override
   void dispose() {
     _tripStatusSub?.cancel();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -128,6 +152,7 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
     dataService.setDestination(point, name);
     setState(() {
       _searchController.text = name;
+      _searchResults.clear();
     });
   }
 
@@ -169,11 +194,12 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
         final planned = dataService.currentPlannedRoute;
 
         return Scaffold(
-          body: IndexedStack(
-            index: _currentTabIndex,
-            children: [
-              // Tab 0: Main Navigation / Route Planning
-              _buildNavigateTab(
+          body: GalaxyBackground(
+            child: IndexedStack(
+              index: _currentTabIndex,
+              children: [
+                // Tab 0: Main Navigation / Route Planning
+                _buildNavigateTab(
                 context,
                 dataService,
                 settings,
@@ -191,33 +217,49 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
               const SystemHealthScreen(showBackButton: false),
 
               // Tab 2: Settings Screen
-              SettingsScreen(
-                onRecalibrate: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CalibrationScreen(dataService: dataService),
-                    ),
-                  );
-                },
-              ),
+              const SettingsScreen(),
             ],
           ),
+        ),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
-              color: surfaceColor.withValues(alpha: isDark ? 0.95 : 0.98),
-              border: Border(top: BorderSide(color: borderColor, width: 1.0)),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: isDark
+                    ? [
+                        const Color(0xF2312048),
+                        const Color(0xF8203B6F),
+                      ]
+                    : [
+                        Colors.white.withValues(alpha: 0.96),
+                        const Color(0xFFEFE8FC).withValues(alpha: 0.92),
+                      ],
+              ),
+              border: Border(
+                top: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF8E68A9).withValues(alpha: 0.45)
+                      : const Color(0xFFBC7EBF).withValues(alpha: 0.35),
+                  width: 1.2,
+                ),
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
+                  color: Colors.black.withValues(alpha: isDark ? 0.50 : 0.08),
+                  blurRadius: 18,
+                  offset: const Offset(0, -4),
+                ),
+                BoxShadow(
+                  color: cyanColor.withValues(alpha: isDark ? 0.12 : 0.05),
+                  blurRadius: 14,
                 ),
               ],
             ),
             child: NavigationBar(
               selectedIndex: _currentTabIndex,
               backgroundColor: Colors.transparent,
-              indicatorColor: cyanColor.withValues(alpha: 0.18),
+              indicatorColor: cyanColor.withValues(alpha: 0.22),
               elevation: 0,
               onDestinationSelected: (idx) {
                 setState(() {
@@ -287,32 +329,54 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
             right: 20,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                 decoration: BoxDecoration(
-                  color: (isDark ? AppColors.darkSurface : AppColors.lightSurface)
-                      .withValues(alpha: isDark ? 0.88 : 0.95),
-                  borderRadius: BorderRadius.circular(20),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [
+                            const Color(0xF0312048),
+                            const Color(0xF0203B6F),
+                          ]
+                        : [
+                            Colors.white.withValues(alpha: 0.95),
+                            const Color(0xFFEFE8FC).withValues(alpha: 0.90),
+                          ],
+                  ),
+                  borderRadius: BorderRadius.circular(22),
                   border: Border.all(
-                    color: isDark ? AppColors.darkBorder : cyanColor.withValues(alpha: 0.35),
-                    width: 1.0,
+                    color: isDark ? const Color(0xFFBC7EBF).withValues(alpha: 0.50) : const Color(0xFFBC7EBF).withValues(alpha: 0.35),
+                    width: 1.2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 3),
+                    ),
+                    BoxShadow(
+                      color: (isDark ? const Color(0xFFA6BAEE) : const Color(0xFF384F95)).withValues(alpha: 0.15),
+                      blurRadius: 10,
                     ),
                   ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.touch_app_rounded,
-                      size: 15,
-                      color: cyanColor,
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: (isDark ? const Color(0xFFA6BAEE) : const Color(0xFF384F95)).withValues(alpha: 0.20),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.touch_app_rounded,
+                        size: 15,
+                        color: isDark ? const Color(0xFFA6BAEE) : const Color(0xFF384F95),
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Flexible(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -322,7 +386,7 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
                             'Where to? (Tap map or select below)',
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                               color: isDark ? AppColors.darkPrimaryText : AppColors.lightPrimaryText,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -330,7 +394,7 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
                           Text(
                             'Tap on the map to set a destination',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 10.5,
                               fontWeight: FontWeight.w500,
                               color: secondaryTextColor,
                             ),
@@ -425,17 +489,33 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: surfaceColor.withValues(alpha: isDark ? 0.90 : 0.96),
-            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                      const Color(0xFF312048).withValues(alpha: 0.92),
+                      const Color(0xFF203B6F).withValues(alpha: 0.86),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.95),
+                      const Color(0xFFEFE8FC).withValues(alpha: 0.90),
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: isDark ? borderColor : cyanColor.withValues(alpha: 0.25),
-              width: 1.0,
+              color: isDark ? const Color(0xFFBC7EBF).withValues(alpha: 0.45) : const Color(0xFFBC7EBF).withValues(alpha: 0.35),
+              width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
-                blurRadius: 10,
+                color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
+                blurRadius: 14,
                 offset: const Offset(0, 3),
+              ),
+              BoxShadow(
+                color: cyanColor.withValues(alpha: isDark ? 0.15 : 0.06),
+                blurRadius: 10,
               ),
             ],
           ),
@@ -445,15 +525,24 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
               Row(
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: cyanColor.withValues(alpha: 0.18),
+                      gradient: RadialGradient(
+                        colors: [
+                          cyanColor.withValues(alpha: 0.35),
+                          cyanColor.withValues(alpha: 0.12),
+                        ],
+                      ),
+                      border: Border.all(
+                        color: cyanColor.withValues(alpha: 0.50),
+                        width: 1.0,
+                      ),
                     ),
                     child: Icon(
                       Icons.shield_rounded,
-                      size: 18,
+                      size: 19,
                       color: cyanColor,
                     ),
                   ),
@@ -474,7 +563,7 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
                         'Resilient Navigation',
                         style: TextStyle(
                           fontSize: 10,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: secondaryTextColor,
                         ),
                       ),
@@ -509,14 +598,33 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: surfaceColor.withValues(alpha: isDark ? 0.92 : 0.96),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor, width: 1.0),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  const Color(0xF2312048),
+                  const Color(0xF2203B6F),
+                ]
+              : [
+                  Colors.white.withValues(alpha: 0.95),
+                  const Color(0xFFEFE8FC).withValues(alpha: 0.90),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: isDark ? const Color(0xFFBC7EBF).withValues(alpha: 0.45) : const Color(0xFFBC7EBF).withValues(alpha: 0.35),
+          width: 1.2,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
+            blurRadius: 14,
             offset: const Offset(0, 3),
+          ),
+          BoxShadow(
+            color: (isDark ? const Color(0xFFA6BAEE) : const Color(0xFF384F95)).withValues(alpha: isDark ? 0.12 : 0.05),
+            blurRadius: 10,
           ),
         ],
       ),
@@ -533,7 +641,7 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
             'Route Preview',
             style: TextStyle(
               fontSize: 17,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
               letterSpacing: 0.2,
               color: primaryTextColor,
             ),
@@ -554,15 +662,24 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
     Color cyanColor,
   ) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
-        color: surfaceColor.withValues(alpha: isDark ? 0.94 : 0.98),
+        color: isDark
+            ? const Color(0xF21D1532) // Refined cosmic galaxy dark surface
+            : const Color(0xFAF8F5FD), // Soft frosted lilac-white in light mode
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: borderColor, width: 1.0)),
+        border: Border(
+          top: BorderSide(
+            color: isDark
+                ? const Color(0xFFBC7EBF).withValues(alpha: 0.40)
+                : const Color(0xFFBC7EBF).withValues(alpha: 0.25),
+            width: 1.2,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.40 : 0.10),
-            blurRadius: 16,
+            color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
+            blurRadius: 18,
             offset: const Offset(0, -4),
           ),
         ],
@@ -571,20 +688,43 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Subtle pull handle
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF8E68A9).withValues(alpha: 0.50)
+                    : const Color(0xFFBC7EBF).withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
           // Search Bar ("Where are you going?" with mic icon)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
             decoration: BoxDecoration(
-              color: (isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle)
-                  .withValues(alpha: 0.9),
+              color: isDark
+                  ? const Color(0xFF281F3F) // Deep plum/navy container fill
+                  : const Color(0xFFF3EDFA), // Clean pastel lavender container fill
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                color: isDark
+                    ? const Color(0xFF8E68A9).withValues(alpha: 0.40)
+                    : const Color(0xFFBC7EBF).withValues(alpha: 0.30),
+                width: 1.0,
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.search_rounded, color: cyanColor, size: 20),
+                Icon(
+                  Icons.search_rounded,
+                  color: isDark ? const Color(0xFFA6BAEE) : const Color(0xFF384F95),
+                  size: 20,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: TextField(
@@ -599,27 +739,118 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
                       hintStyle: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: secondaryTextColor,
+                        color: isDark
+                            ? const Color(0xFFDBC9F9).withValues(alpha: 0.75)
+                            : const Color(0xFF8E68A9),
                       ),
                       border: InputBorder.none,
                       isDense: true,
                     ),
                     onSubmitted: (val) {
                       if (val.trim().isNotEmpty) {
-                        _selectDestination(dataService, const LatLng(12.9756, 77.6066), val.trim());
+                        final matches = SearchLocationService.search(val.trim());
+                        if (matches.isNotEmpty) {
+                          _selectDestination(dataService, matches.first.point, matches.first.name);
+                        } else {
+                          _selectDestination(dataService, const LatLng(12.9756, 77.6066), val.trim());
+                        }
                       }
                     },
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.mic_none_rounded, color: secondaryTextColor, size: 20),
-                  onPressed: () {
-                    _selectDestination(dataService, const LatLng(12.9756, 77.6066), 'MG Road Metro');
-                  },
-                ),
+                if (_searchController.text.isNotEmpty)
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, color: secondaryTextColor, size: 18),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchResults.clear();
+                      });
+                    },
+                  )
+                else
+                  IconButton(
+                    icon: Icon(
+                      Icons.mic_none_rounded,
+                      color: isDark ? const Color(0xFFA6BAEE) : const Color(0xFF8E68A9),
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      _selectDestination(dataService, const LatLng(12.9756, 77.6066), 'MG Road Metro');
+                    },
+                  ),
               ],
             ),
           ),
+
+          // Dropdown Search Results List (if search query entered)
+          if (_searchResults.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF281F3F) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF8E68A9).withValues(alpha: 0.40) : borderColor,
+                  width: 1.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  itemCount: _searchResults.length,
+                  separatorBuilder: (_, _) => Divider(height: 1, color: borderColor.withValues(alpha: 0.4)),
+                  itemBuilder: (ctx, i) {
+                    final loc = _searchResults[i];
+                    return ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                      leading: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: (isDark ? const Color(0xFFA6BAEE) : const Color(0xFF384F95)).withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(loc.icon, size: 16, color: isDark ? const Color(0xFFA6BAEE) : const Color(0xFF384F95)),
+                      ),
+                      title: Text(
+                        loc.name,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: primaryTextColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        loc.subtitle,
+                        style: TextStyle(fontSize: 11, color: secondaryTextColor),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () {
+                        _selectDestination(dataService, loc.point, loc.name);
+                        setState(() {
+                          _searchResults.clear();
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
 
           const SizedBox(height: 14),
 
@@ -628,8 +859,8 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _shortcutLocations.map((sc) {
               final scColor = isDark
-                  ? (sc['colorDark'] as Color? ?? cyanColor)
-                  : (sc['colorLight'] as Color? ?? cyanColor);
+                  ? (sc['colorDark'] as Color)
+                  : (sc['colorLight'] as Color);
 
               return Expanded(
                 child: GestureDetector(
@@ -645,25 +876,27 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? AppColors.darkSurfaceSubtle.withValues(alpha: 0.7)
+                          ? scColor.withValues(alpha: 0.14)
                           : scColor.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isDark ? AppColors.darkBorder : scColor.withValues(alpha: 0.28),
-                        width: 0.8,
+                        color: isDark
+                            ? scColor.withValues(alpha: 0.40)
+                            : scColor.withValues(alpha: 0.28),
+                        width: 1.0,
                       ),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 32,
-                          height: 32,
+                          width: 34,
+                          height: 34,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: scColor.withValues(alpha: isDark ? 0.15 : 0.18),
+                            color: scColor.withValues(alpha: isDark ? 0.22 : 0.16),
                           ),
-                          child: Icon(sc['icon'] as IconData, size: 16, color: scColor),
+                          child: Icon(sc['icon'] as IconData, size: 17, color: scColor),
                         ),
                         const SizedBox(height: 6),
                         Text(
@@ -702,7 +935,7 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: cyanColor,
+                  color: isDark ? const Color(0xFFA6BAEE) : const Color(0xFF384F95),
                 ),
               ),
             ],
@@ -717,14 +950,14 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
               final point = dest['point'] as LatLng;
               final subtitle = dest['subtitle'] as String;
 
-              final itemColor = isDark ? cyanColor : AppColors.lightBlue;
+              final itemColor = isDark ? const Color(0xFFA6BAEE) : const Color(0xFF384F95);
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: Material(
                   color: isDark
-                      ? AppColors.darkSurfaceSubtle.withValues(alpha: 0.6)
-                      : const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+                      ? const Color(0x38203B6F)
+                      : const Color(0xFFF3EDFA).withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(14),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(14),
@@ -736,11 +969,11 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
                       child: Row(
                         children: [
                           Container(
-                            width: 30,
-                            height: 30,
+                            width: 32,
+                            height: 32,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: itemColor.withValues(alpha: isDark ? 0.15 : 0.14),
+                              color: itemColor.withValues(alpha: isDark ? 0.18 : 0.14),
                             ),
                             child: Icon(Icons.history_rounded, size: 16, color: itemColor),
                           ),
@@ -762,7 +995,9 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
                                   subtitle,
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: secondaryTextColor,
+                                    color: isDark
+                                        ? const Color(0xFFDBC9F9).withValues(alpha: 0.75)
+                                        : secondaryTextColor,
                                   ),
                                 ),
                               ],
@@ -798,209 +1033,315 @@ class _DestinationEntryScreenState extends State<DestinationEntryScreen> {
     Color borderColor,
     Color cyanColor,
   ) {
-    // Calculate ETAs for each travel mode
+    // Sync with settings vehicle marker style as single source of truth
+    final isBike = settings.vehicleIconStyle == VehicleIconStyle.bike;
+    final activeMode = isBike ? TravelMode.bike : TravelMode.drive;
+
+    // Calculate ETAs for each travel mode (Drive / Bike only)
     final driveMins = (planned.totalDistanceKm / (TravelMode.drive.avgSpeedKmh / 60.0)).ceil();
     final bikeMins = (planned.totalDistanceKm / (TravelMode.bike.avgSpeedKmh / 60.0)).ceil();
-    final walkMins = (planned.totalDistanceKm / (TravelMode.walk.avgSpeedKmh / 60.0)).ceil();
+    final selectedMins = activeMode == TravelMode.bike ? bikeMins : driveMins;
 
-    int selectedMins;
-    switch (_selectedTravelMode) {
-      case TravelMode.drive:
-        selectedMins = driveMins;
-        break;
-      case TravelMode.bike:
-        selectedMins = bikeMins;
-        break;
-      case TravelMode.walk:
-        selectedMins = walkMins;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
-      decoration: BoxDecoration(
-        color: surfaceColor.withValues(alpha: isDark ? 0.95 : 0.98),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: borderColor, width: 1.0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.12),
-            blurRadius: 18,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Mode-of-Travel Tabs (Drive / Bike / Walk with live ETAs)
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: (isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle)
-                  .withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18.0, sigmaY: 18.0),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 22),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isDark
+                  ? [
+                      const Color(0xF20B132B),
+                      const Color(0xFA030712),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.95),
+                      const Color(0xF2F1F5F9),
+                    ],
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
+              top: BorderSide(
+                color: isDark ? AppColors.darkLuminousBorder : const Color(0x80CBD5E1),
+                width: 1.2,
               ),
             ),
-            child: Row(
-              children: [
-                _buildModeTab(TravelMode.drive, '$driveMins m', isDark, cyanColor),
-                _buildModeTab(TravelMode.bike, '$bikeMins m', isDark, cyanColor),
-                _buildModeTab(TravelMode.walk, '$walkMins m', isDark, cyanColor),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Route Summary Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.darkSurfaceSubtle.withValues(alpha: 0.7)
-                  : (isDark ? AppColors.darkGreen : AppColors.lightGreen).withValues(alpha: 0.07),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isDark
-                    ? AppColors.darkBorder
-                    : (isDark ? AppColors.darkGreen : AppColors.lightGreen).withValues(alpha: 0.35),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.60 : 0.15),
+                blurRadius: 24,
+                offset: const Offset(0, -6),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              if (isDark)
+                BoxShadow(
+                  color: AppColors.darkCyan.withValues(alpha: 0.08),
+                  blurRadius: 30,
+                  offset: const Offset(0, -2),
+                ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.20),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // Mode-of-Travel Tabs (Drive / Bike with live ETAs)
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [
+                            AppColors.darkSurfaceSubtle.withValues(alpha: 0.85),
+                            AppColors.darkSurfaceElevated.withValues(alpha: 0.70),
+                          ]
+                        : [
+                            const Color(0xFFF1F5F9),
+                            const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+                          ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    width: 0.8,
+                  ),
+                ),
+                child: Row(
                   children: [
-                    Row(
+                    _buildModeTab(TravelMode.drive, '$driveMins m', isDark, cyanColor, settings),
+                    _buildModeTab(TravelMode.bike, '$bikeMins m', isDark, cyanColor, settings),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Route Summary Card (Liquid Glass with glowing Emerald accent)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [
+                            AppColors.darkGreen.withValues(alpha: 0.12),
+                            AppColors.darkSurfaceElevated.withValues(alpha: 0.70),
+                          ]
+                        : [
+                            Colors.white.withValues(alpha: 0.95),
+                            AppColors.lightGreen.withValues(alpha: 0.08),
+                          ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: (isDark ? AppColors.darkGreen : AppColors.lightGreen).withValues(alpha: isDark ? 0.50 : 0.40),
+                    width: 1.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isDark ? AppColors.darkGreen : AppColors.lightGreen).withValues(alpha: isDark ? 0.15 : 0.08),
+                      blurRadius: 14,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '$selectedMins min',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            color: isDark ? AppColors.darkGreen : AppColors.lightGreen,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              '$selectedMins min',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? AppColors.darkGreen : AppColors.lightGreen,
+                                shadows: [
+                                  if (isDark)
+                                    Shadow(
+                                      color: AppColors.darkGreen.withValues(alpha: 0.5),
+                                      blurRadius: 10,
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '(${settings.formatDistance(planned.totalDistanceKm)})',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: secondaryTextColor,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(height: 4),
                         Text(
-                          '(${settings.formatDistance(planned.totalDistanceKm)})',
+                          'via Kasturba Rd · Optimal corridor',
                           style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                             color: secondaryTextColor,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'via Kasturba Rd · Optimal corridor',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: secondaryTextColor,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: (isDark ? AppColors.darkGreen : AppColors.lightGreen).withValues(alpha: 0.20),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: (isDark ? AppColors.darkGreen : AppColors.lightGreen).withValues(alpha: 0.6),
+                          width: 0.8,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isDark ? AppColors.darkGreen : AppColors.lightGreen).withValues(alpha: 0.25),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.verified_rounded,
+                            size: 13,
+                            color: isDark ? AppColors.darkGreen : AppColors.lightGreen,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Best route',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? AppColors.darkGreen : AppColors.lightGreen,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: (isDark ? AppColors.darkGreen : AppColors.lightGreen)
-                        .withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: (isDark ? AppColors.darkGreen : AppColors.lightGreen)
-                          .withValues(alpha: 0.6),
-                      width: 0.8,
+              ),
+
+              const SizedBox(height: 18),
+
+              // Full-Width Start Navigation Button (Glowing Cyan Gradient)
+              Container(
+                width: double.infinity,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: AppColors.cyanGlowGradient,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.darkCyan.withValues(alpha: 0.45),
+                      blurRadius: 18,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: const Color(0xFF030712),
+                    shadowColor: Colors.transparent,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  onPressed: () {
+                    _startNavigation(context, dataService);
+                  },
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.verified_rounded,
-                        size: 13,
-                        color: isDark ? AppColors.darkGreen : AppColors.lightGreen,
-                      ),
-                      const SizedBox(width: 4),
+                      Icon(Icons.navigation_rounded, size: 20, color: Color(0xFF030712)),
+                      SizedBox(width: 8),
                       Text(
-                        'Best route',
+                        'Start Navigation',
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? AppColors.darkGreen : AppColors.lightGreen,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                          color: Color(0xFF030712),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          // Full-Width Start Navigation Button
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: cyanColor,
-                foregroundColor: isDark ? AppColors.darkBackground : Colors.white,
-                elevation: 4,
-                shadowColor: cyanColor.withValues(alpha: 0.45),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
               ),
-              onPressed: () {
-                _startNavigation(context, dataService);
-              },
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.navigation_rounded, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Start Navigation',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildModeTab(TravelMode mode, String eta, bool isDark, Color cyanColor) {
-    final isSelected = _selectedTravelMode == mode;
+  Widget _buildModeTab(TravelMode mode, String eta, bool isDark, Color cyanColor, SettingsService settings) {
+    final isBike = settings.vehicleIconStyle == VehicleIconStyle.bike;
+    final isSelected = mode == TravelMode.bike ? isBike : !isBike;
 
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          setState(() {
-            _selectedTravelMode = mode;
-          });
+          if (mode == TravelMode.bike) {
+            settings.setVehicleIconStyle(VehicleIconStyle.bike);
+          } else {
+            settings.setVehicleIconStyle(VehicleIconStyle.car);
+          }
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? cyanColor.withValues(alpha: 0.20) : Colors.transparent,
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: isDark
+                        ? [
+                            cyanColor.withValues(alpha: 0.30),
+                            cyanColor.withValues(alpha: 0.15),
+                          ]
+                        : [
+                            Colors.white,
+                            cyanColor.withValues(alpha: 0.15),
+                          ],
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: isSelected
-                ? Border.all(color: cyanColor.withValues(alpha: 0.6), width: 1.0)
+                ? Border.all(color: cyanColor.withValues(alpha: 0.7), width: 1.0)
+                : null,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: cyanColor.withValues(alpha: 0.20),
+                      blurRadius: 8,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
                 : null,
           ),
           child: Row(

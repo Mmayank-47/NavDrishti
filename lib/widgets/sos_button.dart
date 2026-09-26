@@ -105,10 +105,16 @@ class _SosButtonState extends State<SosButton>
                       boxShadow: [
                         BoxShadow(
                           color: redColor.withValues(
-                            alpha: _isHolding ? 0.65 : 0.35,
+                            alpha: _isHolding ? 0.70 : 0.40,
                           ),
-                          blurRadius: _isHolding ? 24 : 16,
-                          spreadRadius: _isHolding ? 4 : 1,
+                          blurRadius: _isHolding ? 26 : 18,
+                          spreadRadius: _isHolding ? 5 : 2,
+                        ),
+                        BoxShadow(
+                          color: const Color(0xFFD946EF).withValues(
+                            alpha: _isHolding ? 0.45 : 0.20,
+                          ),
+                          blurRadius: _isHolding ? 18 : 12,
                         ),
                       ],
                     ),
@@ -137,18 +143,18 @@ class _SosButtonState extends State<SosButton>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          redColor.withValues(alpha: 0.95),
-                          isDark ? const Color(0xFFB91C1C) : const Color(0xFF991B1B),
+                          redColor,
+                          isDark ? const Color(0xFF991B1B) : const Color(0xFFB91C1C),
                         ],
                       ),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.25),
-                        width: 1.2,
+                        color: Colors.white.withValues(alpha: 0.45),
+                        width: 1.4,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.45),
-                          blurRadius: 8,
+                          color: Colors.black.withValues(alpha: 0.50),
+                          blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),
                       ],
@@ -159,8 +165,8 @@ class _SosButtonState extends State<SosButton>
                       children: [
                         Icon(
                           Icons.notifications_active_rounded,
-                          size: 14,
-                          color: Colors.white.withValues(alpha: 0.95),
+                          size: 15,
+                          color: Colors.white.withValues(alpha: 0.98),
                         ),
                         const SizedBox(height: 1),
                         const Text(
