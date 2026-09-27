@@ -1,8 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import '../models/nav_shield_state.dart';
 import '../services/nav_shield_data_service.dart';
-import '../services/settings_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/nav_toast.dart';
 
@@ -12,16 +11,12 @@ import '../widgets/nav_toast.dart';
 class DebugMenu extends StatelessWidget {
   final NavShieldDataService dataService;
   final VoidCallback? onSimulateRouteDeviation;
-  final VoidCallback? onSimulateOutlierRejection;
-  final VoidCallback? onSimulateGnssOutage;
   final VoidCallback? onSimulateGnssRecovered;
 
   const DebugMenu({
     super.key,
     required this.dataService,
     this.onSimulateRouteDeviation,
-    this.onSimulateOutlierRejection,
-    this.onSimulateGnssOutage,
     this.onSimulateGnssRecovered,
   });
 
@@ -29,8 +24,6 @@ class DebugMenu extends StatelessWidget {
     BuildContext context,
     NavShieldDataService service, {
     VoidCallback? onSimulateRouteDeviation,
-    VoidCallback? onSimulateOutlierRejection,
-    VoidCallback? onSimulateGnssOutage,
     VoidCallback? onSimulateGnssRecovered,
   }) {
     showModalBottomSheet(
@@ -40,8 +33,6 @@ class DebugMenu extends StatelessWidget {
       builder: (ctx) => DebugMenu(
         dataService: service,
         onSimulateRouteDeviation: onSimulateRouteDeviation,
-        onSimulateOutlierRejection: onSimulateOutlierRejection,
-        onSimulateGnssOutage: onSimulateGnssOutage,
         onSimulateGnssRecovered: onSimulateGnssRecovered,
       ),
     );
@@ -55,7 +46,6 @@ class DebugMenu extends StatelessWidget {
     final cyanColor = isDark ? AppColors.darkCyan : AppColors.lightCyan;
     final redColor = isDark ? AppColors.darkRed : AppColors.lightRed;
     final violetColor = isDark ? AppColors.darkViolet : AppColors.lightViolet;
-    final amberColor = isDark ? AppColors.darkAmber : AppColors.lightAmber;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -204,51 +194,6 @@ class DebugMenu extends StatelessWidget {
               const SizedBox(height: 10),
 
               _DebugActionButton(
-                icon: Icons.filter_alt_rounded,
-                iconColor: amberColor,
-                title: 'Simulate GNSS Outlier Rejection',
-                subtitle: 'Triggers Huber M-estimator / χ² multipath rejection cue',
-                isDark: isDark,
-                borderColor: amberColor.withValues(alpha: 0.35),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  if (onSimulateOutlierRejection != null) {
-                    onSimulateOutlierRejection!();
-                  } else {
-                    dataService.triggerSimulatedOutlierRejection();
-                  }
-                },
-              ),
-
-              const SizedBox(height: 10),
-
-              _DebugActionButton(
-                icon: Icons.satellite_alt_rounded,
-                iconColor: amberColor,
-                title: 'Simulate GNSS Outage / Degrading',
-                subtitle: 'Showcases amber "LOW CONFIDENCE" transition toast',
-                isDark: isDark,
-                borderColor: amberColor.withValues(alpha: 0.35),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  if (onSimulateGnssOutage != null) {
-                    onSimulateGnssOutage!();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        backgroundColor: Colors.transparent,
-                        elevation: 0,
-                        duration: Duration(seconds: 3),
-                        content: NavToast(type: NavToastType.lowConfidence),
-                      ),
-                    );
-                  }
-                },
-              ),
-
-              const SizedBox(height: 10),
-
-              _DebugActionButton(
                 icon: Icons.check_circle_rounded,
                 iconColor: isDark ? AppColors.darkGreen : AppColors.lightGreen,
                 title: 'Simulate GNSS Recovered',
@@ -260,6 +205,17 @@ class DebugMenu extends StatelessWidget {
                   if (onSimulateGnssRecovered != null) {
                     onSimulateGnssRecovered!();
                   } else {
+                    if (dataService.currentState.currentMode == NavMode.deadReckoning) {
+                      dataService.toggleMode();
+                    } else {
+                      // Standalone recovery simulation: transition into outage state briefly then recover
+                      dataService.toggleMode();
+                      Future.delayed(const Duration(milliseconds: 600), () {
+                        if (dataService.currentState.currentMode == NavMode.deadReckoning) {
+                          dataService.toggleMode();
+                        }
+                      });
+                    }
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         backgroundColor: Colors.transparent,
@@ -272,68 +228,7 @@ class DebugMenu extends StatelessWidget {
                 },
               ),
 
-              const SizedBox(height: 10),
-
-              _DebugActionButton(
-                icon: Icons.restart_alt_rounded,
-                iconColor: secondaryTextColor,
-                title: 'Reset Trip Statistics',
-                subtitle: 'Clears distance, drift and restarts breadcrumb track',
-                isDark: isDark,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  dataService.resetTrip();
-                },
-              ),
-
-              const SizedBox(height: 14),
-              Divider(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-              const SizedBox(height: 10),
-
-              // Live WebSocket Backend Toggle
-              Consumer<SettingsService>(
-                builder: (context, settings, _) {
-                  return Material(
-                    color: (isDark ? AppColors.darkSurfaceSubtle : AppColors.lightSurfaceSubtle)
-                        .withValues(alpha: 0.8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(
-                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                      child: SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        secondary: Icon(
-                          Icons.sensors_rounded,
-                          color: settings.useRealBackend ? const Color(0xFF10B981) : secondaryTextColor,
-                        ),
-                        title: Text(
-                          'Live Python WebSocket Backend',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: primaryTextColor,
-                          ),
-                        ),
-                        subtitle: Text(
-                          settings.useRealBackend
-                              ? 'Connecting to ws://${settings.backendHost}:${settings.backendPort}'
-                              : 'Using realistic simulated 10Hz Bangalore telemetry',
-                          style: TextStyle(fontSize: 12, color: secondaryTextColor),
-                        ),
-                        value: settings.useRealBackend,
-                        onChanged: (val) {
-                          settings.setUseRealBackend(val);
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
             ],
           ),
         ),

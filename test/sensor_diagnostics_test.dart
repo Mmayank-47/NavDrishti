@@ -32,18 +32,19 @@ void main() {
       expect(find.text('Roll Axis — Negative X Acceleration'), findsOneWidget);
       expect(find.text('X ≤ -2.2 m/s²'), findsOneWidget);
 
-      // Verify Live Readout card
-      expect(find.text('LIVE HARDWARE READOUT'), findsOneWidget);
-      expect(find.text('ACCELEROMETER (m/s²)'), findsOneWidget);
-      expect(find.text('GYROSCOPE (rad/s)'), findsOneWidget);
-      expect(find.text('MAGNETOMETER (µT) & COMPASS'), findsOneWidget);
+      // Verify Live Readout card is completely removed
+      expect(find.text('LIVE HARDWARE READOUT'), findsNothing);
+      expect(find.text('100Hz Local Stream'), findsNothing);
+      expect(find.text('ACCELEROMETER (m/s²)'), findsNothing);
+      expect(find.text('GYROSCOPE (rad/s)'), findsNothing);
+      expect(find.text('MAGNETOMETER (µT) & COMPASS'), findsNothing);
 
       await accelController.close();
       await gyroController.close();
       await magController.close();
     });
 
-    testWidgets('Live numeric values update when sensor streams emit including magnetometer', (tester) async {
+    testWidgets('Live hardware readout is absent and motion deflection responds to sensor events', (tester) async {
       final accelController = StreamController<AccelerometerEvent>.broadcast();
       final gyroController = StreamController<GyroscopeEvent>.broadcast();
       final magController = StreamController<MagnetometerEvent>.broadcast();
@@ -58,22 +59,23 @@ void main() {
         ),
       );
 
+      // Verify no live readout card or axis boxes
+      expect(find.text('LIVE HARDWARE READOUT'), findsNothing);
+      expect(find.text('100Hz Local Stream'), findsNothing);
+
       // Emit sensor events
-      accelController.add(AccelerometerEvent(-1.50, 2.34, 9.81, DateTime.now()));
+      accelController.add(AccelerometerEvent(-1.75, 0.0, 9.81, DateTime.now()));
       gyroController.add(GyroscopeEvent(0.05, -0.12, 0.45, DateTime.now()));
       magController.add(MagnetometerEvent(18.5, -32.4, 45.0, DateTime.now()));
       await tester.pump();
 
-      // Check numeric readouts
-      expect(find.text('-1.50'), findsOneWidget);
-      expect(find.text('+2.34'), findsOneWidget);
-      expect(find.text('+9.81'), findsOneWidget);
-      expect(find.text('+0.05'), findsOneWidget);
-      expect(find.text('-0.12'), findsOneWidget);
-      expect(find.text('+0.45'), findsOneWidget);
-      expect(find.text('+18.50'), findsOneWidget);
-      expect(find.text('-32.40'), findsOneWidget);
-      expect(find.text('+45.00'), findsOneWidget);
+      // Motion deflection gauge updates (1.75 / 3.5 = 50%)
+      expect(find.text('50%'), findsOneWidget);
+      expect(find.text('Motion Deflection'), findsOneWidget);
+
+      // Verify readout tiles do not exist
+      expect(find.text('ACCELEROMETER (m/s²)'), findsNothing);
+      expect(find.text('GYROSCOPE (rad/s)'), findsNothing);
 
       await accelController.close();
       await gyroController.close();

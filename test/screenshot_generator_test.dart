@@ -29,7 +29,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  const artifactDir = r'C:\Users\Lenovo\.gemini\antigravity-ide\brain\30c82165-ca4c-4555-9642-a41e25062664';
+  const artifactDir = r'C:\Users\Lenovo\.gemini\antigravity-ide\brain\3c083612-fa56-4261-ab7f-232e704ecf2f';
 
   setUpAll(() async {
     Directory(artifactDir).createSync(recursive: true);
@@ -311,16 +311,16 @@ void main() {
       service.dispose();
     }
 
-    // 8. Debug Menu (Dark)
-    {
+    // 8. Debug Menu (Dark & Light)
+    for (final isDark in [true, false]) {
       final service = MockNavShieldDataService(autoStart: false);
       await captureScreen(
         tester: tester,
         widget: wrapWithProviders(
           service: service,
-          isDark: true,
+          isDark: isDark,
           child: Scaffold(
-            backgroundColor: AppColors.darkBackground,
+            backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
             body: SafeArea(
               child: DebugMenu(
                 dataService: service,
@@ -328,7 +328,7 @@ void main() {
             ),
           ),
         ),
-        filename: 'debug_menu_dark.png',
+        filename: isDark ? 'debug_menu_dark.png' : 'debug_menu_light.png',
       );
       service.dispose();
     }

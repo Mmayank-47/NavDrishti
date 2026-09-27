@@ -77,12 +77,7 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
   double _accelX = 0.0;
   double _accelY = 0.0;
   double _accelZ = 0.0;
-  double _gyroX = 0.0;
-  double _gyroY = 0.0;
   double _gyroZ = 0.0;
-  double _magX = 0.0;
-  double _magY = 0.0;
-  double _magZ = 0.0;
   double _compassHeading = 0.0;
   double _lastHeading = -1.0;
   double _accumulatedHeadingDelta = 0.0;
@@ -209,8 +204,6 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
     _gyroSubscription = gyroStream.listen((GyroscopeEvent event) {
       if (!mounted) return;
       setState(() {
-        _gyroX = event.x;
-        _gyroY = event.y;
         _gyroZ = event.z;
         _hasReceivedSensorData = true;
       });
@@ -222,9 +215,6 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
         (MagnetometerEvent event) {
           if (!mounted) return;
           setState(() {
-            _magX = event.x;
-            _magY = event.y;
-            _magZ = event.z;
             _hasReceivedSensorData = true;
 
             // atan2(y, x) compass heading in 0..360°
@@ -516,6 +506,23 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
                   amberColor: amberColor,
                   redColor: redColor,
                 ),
+
+                // Bottom note for emulator users
+                if (!_hasReceivedSensorData) ...[
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text(
+                      "Note: In Android Emulator, open Extended Controls (•••) -> Virtual Sensors to tilt device or tap Skip.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: secondaryTextColor,
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
               ] else ...[
                 // Summary Screen
                 _buildSummaryCard(
@@ -531,34 +538,7 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
                 ),
               ],
 
-              const SizedBox(height: 18),
-
-              // 4. Live Raw Hardware Telemetry Stream Card
-              _buildRawTelemetryCard(
-                isDark: isDark,
-                surfaceColor: surfaceColor,
-                borderColor: borderColor,
-                primaryTextColor: primaryTextColor,
-                secondaryTextColor: secondaryTextColor,
-                blueColor: blueColor,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Bottom note for emulator users
-              if (!_hasReceivedSensorData)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Text(
-                    "Note: In Android Emulator, open Extended Controls (•••) -> Virtual Sensors to tilt device or tap Skip.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: secondaryTextColor,
-                      fontSize: 11,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -1039,222 +1019,6 @@ class _SensorDiagnosticsScreenState extends State<SensorDiagnosticsScreen>
           ),
         ),
       ],
-    );
-  }
-
-  /// Live Numeric Telemetry Card showing real hardware values directly.
-  Widget _buildRawTelemetryCard({
-    required bool isDark,
-    required Color surfaceColor,
-    required Color borderColor,
-    required Color primaryTextColor,
-    required Color secondaryTextColor,
-    required Color blueColor,
-  }) {
-    return LiquidGlassCard(
-      borderRadius: 16,
-      glowColor: isDark ? const Color(0xFF06B6D4) : const Color(0xFF0891B2),
-      glowRadius: 14,
-      glowAlpha: isDark ? 0.25 : 0.12,
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF10B981),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          'LIVE HARDWARE READOUT',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: primaryTextColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '100Hz Local Stream',
-                  style: TextStyle(
-                    color: secondaryTextColor,
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            // Accelerometer Live Values
-            Text(
-              'ACCELEROMETER (m/s²)',
-              style: TextStyle(
-                color: secondaryTextColor,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                _buildAxisValueBox('X', _accelX, isDark, borderColor, primaryTextColor),
-                const SizedBox(width: 8),
-                _buildAxisValueBox('Y', _accelY, isDark, borderColor, primaryTextColor),
-                const SizedBox(width: 8),
-                _buildAxisValueBox('Z', _accelZ, isDark, borderColor, primaryTextColor),
-              ],
-            ),
-
-            const SizedBox(height: 14),
-
-            // Gyroscope Live Values
-            Text(
-              'GYROSCOPE (rad/s)',
-              style: TextStyle(
-                color: secondaryTextColor,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                _buildAxisValueBox('X', _gyroX, isDark, borderColor, primaryTextColor),
-                const SizedBox(width: 8),
-                _buildAxisValueBox('Y', _gyroY, isDark, borderColor, primaryTextColor),
-                const SizedBox(width: 8),
-                _buildAxisValueBox('Z', _gyroZ, isDark, borderColor, primaryTextColor),
-              ],
-            ),
-
-            const SizedBox(height: 14),
-
-            // Magnetometer Live Values & Heading (Item 3)
-            Text(
-              'MAGNETOMETER (µT) & COMPASS',
-              style: TextStyle(
-                color: secondaryTextColor,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                _buildAxisValueBox('X', _magX, isDark, borderColor, primaryTextColor),
-                const SizedBox(width: 8),
-                _buildAxisValueBox('Y', _magY, isDark, borderColor, primaryTextColor),
-                const SizedBox(width: 8),
-                _buildAxisValueBox('Z', _magZ, isDark, borderColor, primaryTextColor),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFF0891B2).withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isDark ? borderColor : const Color(0xFF0891B2).withValues(alpha: 0.25),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'HEADING',
-                          style: TextStyle(
-                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF0891B2),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${_compassHeading.toStringAsFixed(0)}°',
-                          style: TextStyle(
-                            color: primaryTextColor,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-    );
-  }
-
-  Widget _buildAxisValueBox(
-    String axis,
-    double value,
-    bool isDark,
-    Color borderColor,
-    Color textColor,
-  ) {
-    final isNegative = value < 0;
-    final formatted = '${isNegative ? "" : "+"}${value.toStringAsFixed(2)}';
-
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0F172A) : const Color(0xFF0891B2).withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isDark ? borderColor : const Color(0xFF0891B2).withValues(alpha: 0.25),
-          ),
-        ),
-        child: Column(
-          children: [
-            Text(
-              axis,
-              style: TextStyle(
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF0891B2),
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                formatted,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'monospace',
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

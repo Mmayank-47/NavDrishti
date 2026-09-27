@@ -225,7 +225,7 @@ class TripBottomSheet extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              // 4. Glanceable Stats Grid (Accuracy, Speed, Distance, Drift, Altitude, Satellites)
+              // 4. Glanceable Stats Grid (Accuracy, Speed, Distance, Drift Estimate)
               Row(
                 children: [
                   Expanded(
@@ -271,34 +271,6 @@ class TripBottomSheet extends StatelessWidget {
                     child: _StatCard(
                       label: 'DRIFT ESTIMATE',
                       value: '${state.driftEstimatePercent.toStringAsFixed(1)}%',
-                      primaryTextColor: primaryTextColor,
-                      secondaryTextColor: secondaryTextColor,
-                      isDark: isDark,
-                      accentColor: isDeadReckoning ? violetColor : cyanColor,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatCard(
-                      label: 'ALTITUDE',
-                      value: '${state.altitude.toStringAsFixed(0)} m',
-                      primaryTextColor: primaryTextColor,
-                      secondaryTextColor: secondaryTextColor,
-                      isDark: isDark,
-                      accentColor: isDeadReckoning ? violetColor : cyanColor,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _StatCard(
-                      label: 'SATELLITES',
-                      value: isDeadReckoning ? 'Lost' : '14 Locked',
                       primaryTextColor: primaryTextColor,
                       secondaryTextColor: secondaryTextColor,
                       isDark: isDark,

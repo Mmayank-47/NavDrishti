@@ -336,6 +336,22 @@ class MainNavigationScreenState extends State<MainNavigationScreen>
     });
   }
 
+  void simulateGnssRecovered() {
+    final dataService = context.read<NavShieldDataService>();
+    if (dataService.currentState.currentMode == NavMode.deadReckoning) {
+      dataService.toggleMode();
+    } else {
+      // Standalone recovery simulation: transition into outage/degraded state briefly
+      // then trigger recovery annealing sequence.
+      dataService.toggleMode();
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted && dataService.currentState.currentMode == NavMode.deadReckoning) {
+          dataService.toggleMode();
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final dataService = context.watch<NavShieldDataService>();
@@ -742,20 +758,7 @@ class MainNavigationScreenState extends State<MainNavigationScreen>
                                   context,
                                   dataService,
                                   onSimulateRouteDeviation: simulateRouteDeviation,
-                                  onSimulateOutlierRejection: () {
-                                    dataService.triggerSimulatedOutlierRejection();
-                                    _triggerOutlierBadge();
-                                  },
-                                  onSimulateGnssOutage: () {
-                                    if (dataService.currentState.currentMode == NavMode.gnssAided) {
-                                      dataService.toggleMode();
-                                    }
-                                  },
-                                  onSimulateGnssRecovered: () {
-                                    if (dataService.currentState.currentMode == NavMode.deadReckoning) {
-                                      dataService.toggleMode();
-                                    }
-                                  },
+                                  onSimulateGnssRecovered: simulateGnssRecovered,
                                 ),
                                 child: Container(
                                   padding: const EdgeInsets.all(7),
@@ -789,20 +792,7 @@ class MainNavigationScreenState extends State<MainNavigationScreen>
                               context,
                               dataService,
                               onSimulateRouteDeviation: simulateRouteDeviation,
-                              onSimulateOutlierRejection: () {
-                                dataService.triggerSimulatedOutlierRejection();
-                                _triggerOutlierBadge();
-                              },
-                              onSimulateGnssOutage: () {
-                                if (dataService.currentState.currentMode == NavMode.gnssAided) {
-                                  dataService.toggleMode();
-                                }
-                              },
-                              onSimulateGnssRecovered: () {
-                                if (dataService.currentState.currentMode == NavMode.deadReckoning) {
-                                  dataService.toggleMode();
-                                }
-                              },
+                              onSimulateGnssRecovered: simulateGnssRecovered,
                             ),
                           ),
                         ],
