@@ -1,0 +1,11 @@
+{
+  "phone_csv": "/content/S-training-session.csv",
+  "session": "documented-training-session",
+  "t0_s": 10.0,
+  "t1_s": 15.0,
+  "timestamp_gap_s": 2.0,
+  "mode": "constant_velocity",
+  "history_min_span_s": 1.0,
+  "history_max_span_s": 5.0,
+  "max_extrapolation_s": 2.0
+}
