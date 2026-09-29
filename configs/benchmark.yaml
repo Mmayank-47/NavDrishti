@@ -1,12 +1,14 @@
 # configs/benchmark.yaml
-# SIH PS 26168 benchmark thresholds — transparent configuration values.
+# Navigation benchmark thresholds — transparent configuration values.
 # NEVER hardcode these inside benchmark Python code.
 # NEVER hardcode PASS or FAIL — always compute from actual results.
 
-# ── SIH PS 26168 Requirements ──────────────────────────────────────────────────
-sih_requirements:
+# ── Navigation Benchmark Requirements ──────────────────────────────────────────
+target_requirements: &reqs
   # Positional drift < 10% of total distance during GNSS blackout
   max_drift_percent: 10.0
+
+sih_requirements: *reqs
 
   # Examples from the spec:
   example_50m:

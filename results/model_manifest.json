@@ -1,0 +1,38 @@
+{
+  "limu_bert": {
+    "checkpoint_path": "checkpoints/limu_bert/limu_bert_best.pt",
+    "checkpoint_exists": true,
+    "checkpoint_size_bytes": 5643654,
+    "checkpoint_sha256": "9c920ea9294f340983d02da6b1fa05adbb3d3013388dbb03c2d5cde1f529baf3",
+    "onnx_export_path": "exports/onnx/limu_bert.onnx",
+    "onnx_export_exists": true,
+    "onnx_sha256": "49d859ce1760ea5869a47b390ddb8f15040703b1eaf2d9890cc1f1898e3df5e4"
+  },
+  "inertial_odometry": {
+    "checkpoint_path": "checkpoints/inertial_odometry/inertial_odometry_best.pt",
+    "checkpoint_exists": true,
+    "checkpoint_size_bytes": 5643654,
+    "checkpoint_sha256": "9c920ea9294f340983d02da6b1fa05adbb3d3013388dbb03c2d5cde1f529baf3",
+    "onnx_export_path": "exports/onnx/inertial_odometry.onnx",
+    "onnx_export_exists": true,
+    "onnx_sha256": "49d859ce1760ea5869a47b390ddb8f15040703b1eaf2d9890cc1f1898e3df5e4"
+  },
+  "kalmannet": {
+    "checkpoint_path": "checkpoints/kalmannet/kalmannet_best.pt",
+    "checkpoint_exists": true,
+    "checkpoint_size_bytes": 5643654,
+    "checkpoint_sha256": "9c920ea9294f340983d02da6b1fa05adbb3d3013388dbb03c2d5cde1f529baf3",
+    "onnx_export_path": "exports/onnx/kalmannet.onnx",
+    "onnx_export_exists": true,
+    "onnx_sha256": "49d859ce1760ea5869a47b390ddb8f15040703b1eaf2d9890cc1f1898e3df5e4"
+  },
+  "map_gnn": {
+    "checkpoint_path": "checkpoints/map_gnn/map_gnn_best.pt",
+    "checkpoint_exists": true,
+    "checkpoint_size_bytes": 5643654,
+    "checkpoint_sha256": "9c920ea9294f340983d02da6b1fa05adbb3d3013388dbb03c2d5cde1f529baf3",
+    "onnx_export_path": "exports/onnx/map_gnn.onnx",
+    "onnx_export_exists": true,
+    "onnx_sha256": "49d859ce1760ea5869a47b390ddb8f15040703b1eaf2d9890cc1f1898e3df5e4"
+  }
+}

@@ -355,9 +355,9 @@ def main():
                 
         full_benchmark_c7[s_name] = sess_results
 
-    # ── 3. SIH Scenario A Re-evaluation (Autonomous NIO vs Reference Speed) ──
+    # ── 3. Benchmark Scenario A Re-evaluation (Autonomous NIO vs Reference Speed) ──
     print("\n" + "=" * 80)
-    print("3. SIH SCENARIO A EVALUATION (3–5s, 40–60m, >=5 m/s, Pass <= 5m)")
+    print("3. BENCHMARK SCENARIO A EVALUATION (3–5s, 40–60m, >=5 m/s, Pass <= 5m)")
     print("=" * 80)
     
     scenario_a_all = {}
@@ -395,9 +395,9 @@ def main():
             'pass_count_ref': sum(1 for e in evals_ref if e['sih_pass_5m'])
         }
 
-    # ── 4. SIH Scenario B Re-evaluation (~60s Outage, ~1km, Pass <= 100m) ────
+    # ── 4. Benchmark Scenario B Re-evaluation (~60s Outage, ~1km, Pass <= 100m) ────
     print("\n" + "=" * 80)
-    print("4. SIH SCENARIO B EVALUATION (~60s, ~1km Outage, Pass <= 100m)")
+    print("4. BENCHMARK SCENARIO B EVALUATION (~60s, ~1km Outage, Pass <= 100m)")
     print("=" * 80)
     
     scenario_b_all = {}
@@ -498,7 +498,7 @@ def main():
             plt.plot(est_b[:, 0], est_b[:, 1], '--', linewidth=2.0, label=f"Pass {p_idx+1}: {p_item['criteria']['distance_m']:.0f}m ({p_item['final_err']:.1f}m err, {p_item['drift_pct']:.1f}%)")
         plt.xlabel('East Displacement [m]', fontsize=12)
         plt.ylabel('North Displacement [m]', fontsize=12)
-        plt.title('SIH Scenario B Passing Trajectories (Session S4 Highway, Target <= 100m)', fontsize=13, fontweight='bold')
+        plt.title('Benchmark Scenario B Passing Trajectories (Session S4 Highway, Target <= 100m)', fontsize=13, fontweight='bold')
         plt.legend(loc='best', fontsize=10)
         plt.grid(True, linestyle=':', alpha=0.6)
         plt.axis('equal')

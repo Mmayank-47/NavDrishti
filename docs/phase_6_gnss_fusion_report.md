@@ -2,7 +2,7 @@
 
 **SIH PS 26168 — Intelligent Dead Reckoning**  
 **Evaluation Session:** IO-VNBD Held-Out Test Session `S1` (Driver A, 37.2 km total, 400s evaluation segment)  
-**Adheres to:** Section 23 of `procedure_roadmap.md` & Section 1–4 of `PROJECT_RULES.md`
+**Adheres to:** Robust GNSS/INS Integration Specifications & Zero-Fabrication Standards
 
 ---
 

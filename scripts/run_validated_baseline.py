@@ -272,7 +272,7 @@ def find_qualifying_segments_exact(enu_gt, cum_dist, speed_arr, dt=0.1,
 
 def main():
     print("=" * 80)
-    print("  SIH PS 26168 — VALIDATED BASELINE EXECUTION ON LIGHTNING AI")
+    print("  VALIDATED NAVIGATION BASELINE EXECUTION ON LIGHTNING AI")
     print("  Device:", DEVICE)
     print("=" * 80)
     

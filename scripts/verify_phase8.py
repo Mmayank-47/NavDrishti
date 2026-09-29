@@ -111,7 +111,7 @@ def test_phase8_notebooks_integrity():
 
 def main():
     print("=" * 70)
-    print("  SIH PS 26168 — Phase 8: Final Pipeline & SIH Benchmark Verification")
+    print("  Phase 8: Final Pipeline & Target Benchmark Verification")
     print("=" * 70)
     test_pipeline_initialization_and_schema()
     test_blackout_and_recovery_transitions()

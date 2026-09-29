@@ -7,10 +7,12 @@
 # 1. CREDENTIALS & SENSITIVE SECRETS (STRICT - NEVER COMMIT TO GITHUB)
 # -----------------------------------------------------------------------------
 configs/lightning*
+!configs/lightning.env.template
 configs/*.env
 *.env
 *.env.*
 *.template
+!*.env.template
 *.pem
 *.key
 *.pub

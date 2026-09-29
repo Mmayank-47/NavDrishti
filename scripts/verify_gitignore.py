@@ -38,8 +38,8 @@ test_files = [
     ('docs/phase_9_model_export_report.md', False),
     ('results/model_export_metrics.json', False),
     ('plots/export/model_latency_comparison.png', False),
-    ('procedure_roadmap.md', False),
-    ('PROJECT_RULES.md', False),
+    ('requirements.txt', False),
+    ('pyproject.toml', False),
     # VSCode automation tools (MUST BE TRACKED)
     ('.vscode/tasks.json', False),
     ('.vscode/sync_and_run.ps1', False),

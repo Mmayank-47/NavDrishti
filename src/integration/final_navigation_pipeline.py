@@ -16,7 +16,7 @@ try:
     from src.models.kalmannet import KalmanNetNN
     from src.models.map_gnn import MapGNN
     HAS_TORCH = True
-except ImportError:
+except (ImportError, OSError):
     torch = None
     KalmanNetNN = None
     MapGNN = None
